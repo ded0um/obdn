@@ -1,118 +1,148 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Coller Yapla → Google Form (auto-submit)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
+  <title>Coller Yapla → Google Form</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:18px}
-    textarea{width:100%;box-sizing:border-box}
-    button, select {margin-top:8px}
-    pre{background:#f7f7f7;border:1px solid #ddd;padding:8px;white-space:pre-wrap}
-    .controls {display:flex;gap:8px;align-items:center;margin-top:8px}
-    label {font-weight:600;margin-right:6px}
+    :root{
+      --bg:#f4f6f8;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#0ea5a4;
+      --accent-dark:#0b7f7d;
+      --border:#e6eef0;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --shadow: 0 6px 24px rgba(14,165,164,0.08);
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#f8fbfb 0%,var(--bg) 100%);color:#0f172a}
+    .wrap{max-width:880px;margin:36px auto;padding:20px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    header h1{font-size:20px;margin:0}
+    header p{margin:0;color:var(--muted);font-size:13px}
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0f172a}
+    textarea{
+      width:100%;
+      min-height:140px;
+      resize:vertical;
+      padding:12px;
+      border-radius:8px;
+      border:1px solid #e8eef0;
+      font-size:14px;
+      box-sizing:border-box;
+      background:linear-gradient(180deg,#fff,#fbfeff);
+      color:#0b1220;
+    }
+
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
+    select, button, input[type="text"]{
+      padding:8px 12px;
+      border-radius:8px;
+      border:1px solid #e6eef0;
+      background: #fff;
+      font-size:14px;
+    }
+    select:disabled, button:disabled {opacity:0.6;cursor:not-allowed}
+    .btn{
+      background:linear-gradient(180deg,var(--accent),var(--accent-dark));
+      color:#fff;border:none;cursor:pointer;
+      box-shadow:0 6px 18px rgba(11,127,125,0.14);
+    }
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(14,165,164,0.12);box-shadow:none}
+    .btn.warn{background:linear-gradient(180deg,#f59e0b,#d97706);color:#fff}
+
+    .preview{
+      margin-top:14px;
+      padding:12px;border-radius:8px;border:1px solid #eef6f6;background:linear-gradient(180deg,#fff,#fbffff);
+    }
+
+    .kv{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;padding:6px 0;border-bottom:1px dashed #f1f6f6}
+    .kv:last-child{border-bottom:none}
+    .k{color:var(--muted);font-size:13px}
+    .v{font-weight:600;color:#0b1220}
+
+    .msg{margin-top:10px;font-size:13px;color:var(--danger)}
+    footer{margin-top:14px;display:flex;gap:8px;justify-content:flex-end}
+
+    @media (max-width:620px){
+      .kv{grid-template-columns:120px 1fr}
+      header{flex-direction:column;align-items:flex-start;gap:6px}
+    }
   </style>
 </head>
 <body>
-  <h2>Coller Yapla → Soumettre Google Form</h2>
-  <p>Colle ici le texte copié depuis Yapla, clique "Parser", choisis le mode de versement si besoin, puis "Soumettre au Form" ou "Ouvrir lien prérempli".</p>
+  <div class="wrap">
+    <header>
+      <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(180deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">Y</div>
+      <div>
+        <h1>Coller Yapla → Google Form</h1>
+        <p>Colle le contenu Yapla, choisis le mode de versement, vérifie puis envoie la réponse.</p>
+      </div>
+    </header>
 
-  <textarea id="raw" rows="14" placeholder="Colle ici le texte copié depuis Yapla"></textarea><br/>
+    <div class="card" id="mainCard">
+      <!-- Etape 1 : coller le texte -->
+      <div>
+        <label for="raw">1) Colle le texte copié depuis Yapla</label>
+        <textarea id="raw" placeholder="Colle ici le texte copié depuis Yapla (ex: 'Dons ... Elisabeth Volant ...')"></textarea>
+      </div>
 
-  <div class="controls">
-    <button id="parseBtn">Parser</button>
-    <button id="submitBtn" disabled>Soumettre au Form</button>
-    <button id="prefillBtn" disabled>Ouvrir lien prérempli (vérifier)</button>
-    <div style="margin-left:12px">
-      <label for="modeSelect">Mode de versement</label>
-      <select id="modeSelect">
-        <option value="">— choisir —</option>
-        <option>Carte bancaire</option>
-        <option>Virement bancaire</option>
-        <option>Chèque bancaire</option>
-        <option>Espèce</option>
-      </select>
+      <!-- Etape 2 : mode de versement requis -->
+      <div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="min-width:220px">
+          <label for="modeSelect">2) Mode de versement (obligatoire)</label>
+          <select id="modeSelect" aria-label="Mode de versement">
+            <option value="">— choisir —</option>
+            <option>Carte bancaire</option>
+            <option>Virement bancaire</option>
+            <option>Chèque bancaire</option>
+            <option>Espèce</option>
+          </select>
+        </div>
+
+        <div style="flex:1;min-width:220px">
+          <label>&nbsp;</label>
+          <div style="font-size:13px;color:var(--muted)">Le mode sélectionné sera injecté dans la question "Mode de versement".</div>
+        </div>
+      </div>
+
+      <div class="controls" style="margin-top:14px">
+        <button id="parseBtn" class="btn ghost" title="Analyser le texte collé">Parser</button>
+        <div id="validationMsg" class="msg" style="display:none"></div>
+      </div>
+
+      <!-- Aperçu -->
+      <div id="previewBox" class="preview" style="display:none">
+        <label style="font-weight:700;margin-bottom:8px;display:block">Aperçu des données extraites (normalisées)</label>
+        <div id="kvlist"></div>
+      </div>
+
+      <footer>
+        <button id="prefillBtn" class="btn ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
+        <button id="submitBtn" class="btn" disabled>Soumettre au Form</button>
+      </footer>
+    </div>
+
+    <div style="margin-top:12px;color:var(--muted);font-size:13px">
+      Astuce : utilise "Ouvrir lien prérempli" pour vérifier avant envoi. Évite les doubles envois — le bouton sera désactivé après soumission.
     </div>
   </div>
 
-  <h3>Aperçu des données extraites (normalisées)</h3>
-  <pre id="preview">{}</pre>
-
 <script>
-/* ===== Utilities ===== */
-function normalizeAmount(raw) {
-  if (!raw) return '';
-  let s = String(raw).replace(/\u00A0/g,' ').trim();
-  s = s.replace(/\s/g,'');
-  s = s.replace(/[^\d,.\-]/g,'');
-  if (!s) return '';
-  if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
-  if (s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
-  return s;
-}
-
-function parseDateToYYYYMMDD(raw) {
-  if (!raw) return '';
-  raw = String(raw).trim();
-  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-  const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
-  const any = raw.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-  if (any) return `${any[3]}-${any[2]}-${any[1]}`;
-  return '';
-}
-
-/* parseYapla : heuristique adaptée aux exemples fournis */
-function parseYapla(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  const data = {};
-  const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
-  for (let i=0;i<lines.length;i++) {
-    const L = lines[i];
-    for (const lab of labels) {
-      if (L.toLowerCase() === lab.toLowerCase()) {
-        const val = (lines[i+1] || '').trim();
-        if (val) {
-          const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
-          data[key] = val;
-        }
-      }
-    }
-    const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-    if (email) data.courriel = email[0];
-    const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
-    if (phone && !/€/.test(L)) data.telephone = (data.telephone || phone[0]).replace(/\s+/g,'');
-    const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
-    if (montant) data.montant = montant[0];
-    const cp = L.match(/\b\d{5}\b/);
-    if (cp) data.code_postal = cp[0];
-  }
-  if ((!data.prenom || !data.nom) && lines[0]) {
-    const first = lines[0].split(/\s+/);
-    if (first.length >= 2) {
-      if (!data.prenom) data.prenom = first[0];
-      if (!data.nom) data.nom = first.slice(1).join(' ');
-    }
-  }
-  const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
-  return {
-    prenom: data.prenom || '',
-    nom: data.nom || '',
-    email: data.courriel || '',
-    telephone: data.telephone || '',
-    adresse: data.adresse || '',
-    ville: data.ville || '',
-    code_postal: data.code_postal || '',
-    pays: data.pays || '',
-    montant_raw: data.montant || '',
-    montant: normalizeAmount(data.montant || ''),
-    date_raw: date_raw,
-    date_for_form: parseDateToYYYYMMDD(date_raw)
-  };
-}
-
-/* === CONFIG : formAction & mapping prérempli === */
+/* ===== Configuration (ne pas modifier l'ID du formulaire) ===== */
 const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
 const mapping = {
   prenom: 'entry.804774151',
@@ -126,84 +156,211 @@ const mapping = {
   date_creation: 'entry.163110140',
   mode_paiement: 'entry.879040345'
 };
-/* ====================================================== */
+/* ============================================================ */
 
+const rawEl = document.getElementById('raw');
+const modeEl = document.getElementById('modeSelect');
 const parseBtn = document.getElementById('parseBtn');
-const submitBtn = document.getElementById('submitBtn');
 const prefillBtn = document.getElementById('prefillBtn');
-const preview = document.getElementById('preview');
-const modeSelect = document.getElementById('modeSelect');
+const submitBtn = document.getElementById('submitBtn');
+const validationMsg = document.getElementById('validationMsg');
+const previewBox = document.getElementById('previewBox');
+const kvlist = document.getElementById('kvlist');
 
-parseBtn.addEventListener('click', () => {
-  const txt = document.getElementById('raw').value;
-  if (!txt.trim()) { alert('Colle d\'abord le texte Yapla.'); return; }
-  const parsed = parseYapla(txt);
-  window._parsed = parsed;
-  preview.textContent = JSON.stringify(parsed, null, 2);
-  submitBtn.disabled = false;
-  prefillBtn.disabled = false;
-});
-
-function buildPrefillParams(parsed) {
-  const params = new URLSearchParams();
-  params.set(mapping.prenom, parsed.prenom || '');
-  params.set(mapping.nom, parsed.nom || '');
-  params.set(mapping.email, parsed.email || '');
-  params.set(mapping.adresse, parsed.adresse || '');
-  params.set(mapping.code_postal, parsed.code_postal || '');
-  params.set(mapping.ville, parsed.ville || '');
-  params.set(mapping.pays, parsed.pays || '');
-  if (parsed.montant) params.set(mapping.montant, parsed.montant);
-  else if (parsed.montant_raw) params.set(mapping.montant, normalizeAmount(parsed.montant_raw));
-  if (parsed.date_for_form) params.set(mapping.date_creation, parsed.date_for_form);
-  const mode = modeSelect.value || '';
-  if (mode) params.set(mapping.mode_paiement, mode);
-  return params;
+/* Utilities */
+function normalizeAmount(raw){
+  if(!raw) return '';
+  let s = String(raw).replace(/\u00A0/g,' ').trim();
+  s = s.replace(/\s/g,'');
+  s = s.replace(/[^\d,.\-]/g,'');
+  if(!s) return '';
+  if(s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
+  if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
+  return s;
+}
+function parseDateToYYYYMMDD(raw){
+  if(!raw) return '';
+  raw = String(raw).trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+  if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  return '';
 }
 
+/* parseYapla : retourne uniquement les champs normalisés que l'on veut afficher/envoyer */
+function parseYapla(text){
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const data = {};
+  const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
+  for(let i=0;i<lines.length;i++){
+    const L = lines[i];
+    for(const lab of labels){
+      if(L.toLowerCase() === lab.toLowerCase()){
+        const val = (lines[i+1] || '').trim();
+        if(val){
+          const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
+          data[key] = val;
+        }
+      }
+    }
+    // email inline
+    const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if(email) data.courriel = email[0];
+    // montant
+    const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
+    if(montant) data.montant = montant[0];
+    // code postal
+    const cp = L.match(/\b\d{5}\b/);
+    if(cp) data.code_postal = cp[0];
+    // phone is captured but we will not show it in preview
+    const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
+    if(phone) data.telephone = phone[0].replace(/\s+/g,'');
+  }
+  if((!data.prenom || !data.nom) && lines[0]){
+    const first = lines[0].split(/\s+/);
+    if(first.length >= 2){
+      if(!data.prenom) data.prenom = first[0];
+      if(!data.nom) data.nom = first.slice(1).join(' ');
+    }
+  }
+  const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
+  return {
+    prenom: data.prenom || '',
+    nom: data.nom || '',
+    email: data.courriel || '',
+    adresse: data.adresse || '',
+    ville: data.ville || '',
+    code_postal: data.code_postal || '',
+    pays: data.pays || '',
+    montant: normalizeAmount(data.montant || ''),
+    date: parseDateToYYYYMMDD(date_raw) || ''
+    // note: telephone and raw fields intentionally omitted from returned object
+  };
+}
+
+/* UI helpers */
+function showValidation(msg){
+  validationMsg.style.display = 'block';
+  validationMsg.textContent = msg;
+}
+function clearValidation(){
+  validationMsg.style.display = 'none';
+  validationMsg.textContent = '';
+}
+function renderPreview(parsed, modeValue){
+  kvlist.innerHTML = '';
+  const entries = [
+    ['Prénom', parsed.prenom || ''],
+    ['Nom', parsed.nom || ''],
+    ['Courriel', parsed.email || ''],
+    ['Adresse', parsed.adresse || ''],
+    ['Ville', parsed.ville || ''],
+    ['Code postal', parsed.code_postal || ''],
+    ['Pays', parsed.pays || ''],
+    ['Montant', parsed.montant || ''],
+    ['Date (YYYY-MM-DD)', parsed.date || ''],
+    ['Mode de versement', modeValue || '']
+  ];
+  for(const [k,v] of entries){
+    const node = document.createElement('div');
+    node.className = 'kv';
+    node.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`;
+    kvlist.appendChild(node);
+  }
+}
+
+/* State */
+let lastParsed = null;
+
+/* Validation rules before parsing:
+   - raw must not be empty
+   - mode must be selected
+*/
+function canParse(){
+  const raw = rawEl.value.trim();
+  const mode = modeEl.value.trim();
+  if(!raw) { showValidation('Veuillez coller d\'abord le texte Yapla.'); return false; }
+  if(!mode){ showValidation('Veuillez choisir le mode de versement avant de parser.'); return false; }
+  clearValidation();
+  return true;
+}
+
+/* Parse button */
+parseBtn.addEventListener('click', () => {
+  if(!canParse()) return;
+  const txt = rawEl.value;
+  const parsed = parseYapla(txt);
+  lastParsed = parsed;
+  renderPreview(parsed, modeEl.value);
+  previewBox.style.display = 'block';
+  prefillBtn.disabled = false;
+  submitBtn.disabled = false;
+  // Focus submit optionally
+});
+
+/* Build prefill query and open viewform */
+function buildPrefillURL(parsed){
+  const params = new URLSearchParams();
+  if(parsed.prenom) params.set(mapping.prenom, parsed.prenom);
+  if(parsed.nom) params.set(mapping.nom, parsed.nom);
+  if(parsed.email) params.set(mapping.email, parsed.email);
+  if(parsed.adresse) params.set(mapping.adresse, parsed.adresse);
+  if(parsed.code_postal) params.set(mapping.code_postal, parsed.code_postal);
+  if(parsed.ville) params.set(mapping.ville, parsed.ville);
+  if(parsed.pays) params.set(mapping.pays, parsed.pays);
+  if(parsed.montant) params.set(mapping.montant, parsed.montant);
+  if(parsed.date) params.set(mapping.date_creation, parsed.date);
+  if(modeEl.value) params.set(mapping.mode_paiement, modeEl.value);
+  const viewBase = formAction.replace('/formResponse','/viewform');
+  return viewBase + '?usp=pp_url&' + params.toString();
+}
+
+/* Prefill button */
+prefillBtn.addEventListener('click', () => {
+  if(!lastParsed){ showValidation('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
+  clearValidation();
+  const url = buildPrefillURL(lastParsed);
+  window.open(url, '_blank');
+});
+
+/* Submit button: build hidden form and submit in same tab, then disable to avoid duplicates */
 submitBtn.addEventListener('click', () => {
-  if (!window._parsed) { alert('Parser d\'abord'); return; }
+  if(!lastParsed){ showValidation('Parser d\'abord avant de soumettre.'); return; }
+  clearValidation();
+  // Disable UI
   submitBtn.disabled = true;
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
-  modeSelect.disabled = true;
+  rawEl.disabled = true;
+  modeEl.disabled = true;
 
+  // Build and submit
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
   f.target = '_self';
   f.style.display = 'none';
-
-  const parsed = window._parsed;
   const setInput = (name, value) => {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = name;
-    input.value = value || '';
-    f.appendChild(input);
+    const inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = name;
+    inp.value = value || '';
+    f.appendChild(inp);
   };
-
-  setInput(mapping.prenom, parsed.prenom || '');
-  setInput(mapping.nom, parsed.nom || '');
-  setInput(mapping.email, parsed.email || '');
-  setInput(mapping.adresse, parsed.adresse || '');
-  setInput(mapping.code_postal, parsed.code_postal || '');
-  setInput(mapping.ville, parsed.ville || '');
-  setInput(mapping.pays, parsed.pays || '');
-  setInput(mapping.montant, parsed.montant || normalizeAmount(parsed.montant_raw || ''));
-  setInput(mapping.date_creation, parsed.date_for_form || '');
-  setInput(mapping.mode_paiement, modeSelect.value || '');
-
+  setInput(mapping.prenom, lastParsed.prenom || '');
+  setInput(mapping.nom, lastParsed.nom || '');
+  setInput(mapping.email, lastParsed.email || '');
+  setInput(mapping.adresse, lastParsed.adresse || '');
+  setInput(mapping.code_postal, lastParsed.code_postal || '');
+  setInput(mapping.ville, lastParsed.ville || '');
+  setInput(mapping.pays, lastParsed.pays || '');
+  setInput(mapping.montant, lastParsed.montant || '');
+  setInput(mapping.date_creation, lastParsed.date || '');
+  setInput(mapping.mode_paiement, modeEl.value || '');
   document.body.appendChild(f);
   f.submit();
-});
-
-prefillBtn.addEventListener('click', () => {
-  if (!window._parsed) { alert('Parser d\'abord'); return; }
-  const params = buildPrefillParams(window._parsed);
-  const viewBase = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/viewform';
-  const url = viewBase + '?usp=pp_url&' + params.toString();
-  window.open(url, '_blank');
+  // Buttons remain disabled to prevent duplicates. Reload page to process new entry.
 });
 </script>
 </body>
