@@ -5,29 +5,43 @@
   <title>Coller Yapla → Google Form</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:18px;background:#f7fbfb;color:#0b1220}
-    .container{max-width:880px;margin:0 auto;background:#fff;border:1px solid #e6eef0;padding:18px;border-radius:10px}
-    h1{font-size:18px;margin:0 0 6px}
-    p.subtitle{margin:0 0 14px;color:#6b7280;font-size:13px}
+    /* Sobriété : palette neutre (gris / anthracite), pas de couleurs vives */
+    :root{
+      --bg: #f5f6f7;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --text: #0f1724;
+      --border: #e6e9ec;
+      --primary: #374151; /* sombre, discret */
+      --ghost-border: #d1d5db;
+      --shadow: 0 8px 24px rgba(15,23,36,0.06);
+      --success-bg: #eef2f1;
+      --success-dot: #334155;
+    }
+
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    .container{max-width:880px;margin:24px auto;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
+    h1{font-size:18px;margin:0}
+    p.subtitle{margin:6px 0 14px;color:var(--muted);font-size:13px}
     label{display:block;font-weight:600;margin:12px 0 6px}
-    textarea{width:100%;min-height:140px;padding:10px;border-radius:8px;border:1px solid #e8eef0;font-size:14px;background:#fff}
-    select,input{padding:8px 10px;border-radius:8px;border:1px solid #e8eef0;font-size:14px;background:#fff}
+    textarea{width:100%;min-height:140px;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text);box-sizing:border-box}
+    select,input{padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text)}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
     .btn{padding:9px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
-    .btn-primary{background:#0ea5a4;color:#fff;box-shadow:0 6px 18px rgba(14,165,164,0.12)}
-    .btn-ghost{background:transparent;color:#0ea5a4;border:1px solid rgba(14,165,164,0.12)}
-    .btn-danger{background:#ef4444;color:#fff}
+    .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(55,65,81,0.08)}
+    .btn-ghost{background:transparent;color:var(--primary);border:1px solid var(--ghost-border)}
+    .btn-danger{background:#b91c1c;color:#fff}
     .btn:disabled{opacity:0.6;cursor:not-allowed}
-    .preview{margin-top:14px;padding:12px;border-radius:8px;border:1px solid #eef6f6;background:#fbffff}
-    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #f1f6f6}
+    .preview{margin-top:14px;padding:12px;border-radius:8px;border:1px solid #eef1f3;background:#fbfcfd}
+    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #f1f4f6}
     .kv:last-child{border-bottom:none}
-    .k{color:#6b7280}
+    .k{color:var(--muted)}
     .v{font-weight:700}
-    .msg{color:#dc2626;margin-top:8px}
+    .msg{color:#b91c1c;margin-top:8px}
     footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
-    .success { display:flex;align-items:center;gap:12px;background:#ecfdf5;border:1px solid #bbf7d0;padding:12px;border-radius:8px;margin-top:12px }
-    .success .dot{width:40px;height:40px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 6px 18px rgba(16,163,74,0.08)}
-    .success .text{font-weight:600;color:#065f46}
+    .success { display:flex;align-items:center;gap:12px;background:var(--success-bg);border:1px solid #dbe7e3;padding:12px;border-radius:8px;margin-top:12px }
+    .success .dot{width:40px;height:40px;border-radius:50%;background:var(--success-dot);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .success .text{font-weight:700;color:var(--primary)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
     @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}footer{flex-direction:column-reverse}}
   </style>
@@ -57,7 +71,7 @@
           <option>Espèce</option>
         </select>
       </div>
-      <div style="flex:1;color:#6b7280;font-size:13px;padding-top:6px">
+      <div style="flex:1;color:var(--muted);font-size:13px;padding-top:6px">
         Le mode sélectionné sera injecté dans la question "Mode de versement".
       </div>
     </div>
@@ -90,7 +104,7 @@
       </div>
     </div>
 
-    <div style="margin-top:12px;color:#6b7280;font-size:13px">
+    <div style="margin-top:12px;color:var(--muted);font-size:13px">
       Astuce : utilise "Ouvrir lien prérempli" pour vérifier avant envoi.
     </div>
   </div>
@@ -271,9 +285,7 @@ prefillBtn.addEventListener('click', () => {
   window.open(url, '_blank');
 });
 
-/* Submit: open Google form submission in a new tab and show success indicator locally.
-   Note: to keep the page and display success, we submit to a new tab (_blank).
-*/
+/* Submit: open Google form submission in a new tab and show success indicator locally. */
 submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
@@ -289,7 +301,7 @@ submitBtn.addEventListener('click', () => {
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
-  f.target = '_blank';  // open confirmation in new tab
+  f.target = '_blank';
   f.style.display = 'none';
   const setInput = (name, value) => {
     const inp = document.createElement('input');
@@ -334,11 +346,10 @@ anotherBtn.addEventListener('click', () => {
 });
 
 finishBtn.addEventListener('click', () => {
-  // finalise: disable everything and show a final message
+  // finalise: disable everything and update message
   successBox.querySelector('.text').textContent = 'Terminé — tu peux fermer cet onglet.';
   anotherBtn.disabled = true;
   finishBtn.disabled = true;
-  // keep rest disabled
 });
 </script>
 </body>
