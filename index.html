@@ -28,11 +28,9 @@
       <select id="modeSelect">
         <option value="">— choisir —</option>
         <option>Carte bancaire</option>
-        <option>Virement</option>
-        <option>Chèque</option>
-        <option>Espèces</option>
-        <option>Prélèvement</option>
-        <option>Autre</option>
+        <option>Virement bancaire</option>
+        <option>Chèque bancaire</option>
+        <option>Espèce</option>
       </select>
     </div>
   </div>
@@ -44,15 +42,11 @@
 /* ===== Utilities ===== */
 function normalizeAmount(raw) {
   if (!raw) return '';
-  // Exemples d'input: "100,00 €", "20,50 €", "100 €", "100.00 €"
-  let s = String(raw).replace(/\u00A0/g,' ').trim(); // remove nbsp
-  s = s.replace(/\s/g,''); // remove spaces
-  // remove euro sign and any letters
+  let s = String(raw).replace(/\u00A0/g,' ').trim();
+  s = s.replace(/\s/g,'');
   s = s.replace(/[^\d,.\-]/g,'');
   if (!s) return '';
-  // If comma used as decimal separator and there's no dot
   if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
-  // If decimal part exists and equals .00 -> strip decimals
   if (s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
   return s;
 }
@@ -60,17 +54,12 @@ function normalizeAmount(raw) {
 function parseDateToYYYYMMDD(raw) {
   if (!raw) return '';
   raw = String(raw).trim();
-  // Common input like "22-05-2026 05:52" or "15/04/2026 18:26" or "2026-08-04"
-  // Try to detect ISO first
   const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-  // DD-MM-YYYY or DD/MM/YYYY
   const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
   if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
-  // Try to find any 4-digit year and surrounding day/month
   const any = raw.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
   if (any) return `${any[3]}-${any[2]}-${any[1]}`;
-  // As fallback return empty string
   return '';
 }
 
@@ -90,20 +79,15 @@ function parseYapla(text) {
         }
       }
     }
-    // inline email
     const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     if (email) data.courriel = email[0];
-    // phone
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
     if (phone && !/€/.test(L)) data.telephone = (data.telephone || phone[0]).replace(/\s+/g,'');
-    // montant
     const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
     if (montant) data.montant = montant[0];
-    // code postal
     const cp = L.match(/\b\d{5}\b/);
     if (cp) data.code_postal = cp[0];
   }
-  // fallback prénom/nom sur première ligne si besoin
   if ((!data.prenom || !data.nom) && lines[0]) {
     const first = lines[0].split(/\s+/);
     if (first.length >= 2) {
@@ -139,7 +123,7 @@ const mapping = {
   ville: 'entry.1912325143',
   pays: 'entry.1171780890',
   montant: 'entry.1174142672',
-  date_creation: 'entry.163110140',  // si ce champ est une question date, on utilise cette entry (format YYYY-MM-DD)
+  date_creation: 'entry.163110140',
   mode_paiement: 'entry.879040345'
 };
 /* ====================================================== */
@@ -155,10 +139,6 @@ parseBtn.addEventListener('click', () => {
   if (!txt.trim()) { alert('Colle d\'abord le texte Yapla.'); return; }
   const parsed = parseYapla(txt);
   window._parsed = parsed;
-  // Si on a détecté un mode dans le texte (rare), l'utiliser comme valeur par défaut
-  if (parsed.montant_raw && !modeSelect.value) {
-    // nothing automatic here by default
-  }
   preview.textContent = JSON.stringify(parsed, null, 2);
   submitBtn.disabled = false;
   prefillBtn.disabled = false;
@@ -166,7 +146,6 @@ parseBtn.addEventListener('click', () => {
 
 function buildPrefillParams(parsed) {
   const params = new URLSearchParams();
-  // map fields and send normalized values
   params.set(mapping.prenom, parsed.prenom || '');
   params.set(mapping.nom, parsed.nom || '');
   params.set(mapping.email, parsed.email || '');
@@ -174,12 +153,9 @@ function buildPrefillParams(parsed) {
   params.set(mapping.code_postal, parsed.code_postal || '');
   params.set(mapping.ville, parsed.ville || '');
   params.set(mapping.pays, parsed.pays || '');
-  // montant -> send normalized number (no currency symbol)
   if (parsed.montant) params.set(mapping.montant, parsed.montant);
   else if (parsed.montant_raw) params.set(mapping.montant, normalizeAmount(parsed.montant_raw));
-  // date -> if we have date_for_form (YYYY-MM-DD) use it
   if (parsed.date_for_form) params.set(mapping.date_creation, parsed.date_for_form);
-  // mode de paiement -> take from select
   const mode = modeSelect.value || '';
   if (mode) params.set(mapping.mode_paiement, mode);
   return params;
@@ -187,13 +163,11 @@ function buildPrefillParams(parsed) {
 
 submitBtn.addEventListener('click', () => {
   if (!window._parsed) { alert('Parser d\'abord'); return; }
-  // Désactiver boutons pour éviter double envoi
   submitBtn.disabled = true;
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
   modeSelect.disabled = true;
 
-  // Construction formulaire POST dans le même onglet
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
@@ -201,7 +175,6 @@ submitBtn.addEventListener('click', () => {
   f.style.display = 'none';
 
   const parsed = window._parsed;
-  // ajouter champs mapping (hidden inputs)
   const setInput = (name, value) => {
     const input = document.createElement('input');
     input.type = 'hidden';
@@ -217,16 +190,12 @@ submitBtn.addEventListener('click', () => {
   setInput(mapping.code_postal, parsed.code_postal || '');
   setInput(mapping.ville, parsed.ville || '');
   setInput(mapping.pays, parsed.pays || '');
-  // montant normalized
   setInput(mapping.montant, parsed.montant || normalizeAmount(parsed.montant_raw || ''));
-  // date normalized (YYYY-MM-DD)
   setInput(mapping.date_creation, parsed.date_for_form || '');
-  // mode from select
   setInput(mapping.mode_paiement, modeSelect.value || '');
 
   document.body.appendChild(f);
   f.submit();
-  // keep buttons disabled to avoid duplicates
 });
 
 prefillBtn.addEventListener('click', () => {
