@@ -7,23 +7,74 @@
   <style>
     body{font-family:Arial,Helvetica,sans-serif;margin:18px}
     textarea{width:100%;box-sizing:border-box}
-    button{margin-top:8px}
+    button, select {margin-top:8px}
     pre{background:#f7f7f7;border:1px solid #ddd;padding:8px;white-space:pre-wrap}
+    .controls {display:flex;gap:8px;align-items:center;margin-top:8px}
+    label {font-weight:600;margin-right:6px}
   </style>
 </head>
 <body>
   <h2>Coller Yapla → Soumettre Google Form</h2>
-  <p>Colle ici le texte copié depuis Yapla, clique "Parser" puis "Soumettre au Form".</p>
+  <p>Colle ici le texte copié depuis Yapla, clique "Parser", choisis le mode de versement si besoin, puis "Soumettre au Form" ou "Ouvrir lien prérempli".</p>
 
   <textarea id="raw" rows="14" placeholder="Colle ici le texte copié depuis Yapla"></textarea><br/>
-  <button id="parseBtn">Parser</button>
-  <button id="submitBtn" disabled>Soumettre au Form</button>
-  <button id="prefillBtn" disabled>Ouvrir lien prérempli (vérifier)</button>
-  <h3>Aperçu des données extraites</h3>
+
+  <div class="controls">
+    <button id="parseBtn">Parser</button>
+    <button id="submitBtn" disabled>Soumettre au Form</button>
+    <button id="prefillBtn" disabled>Ouvrir lien prérempli (vérifier)</button>
+    <div style="margin-left:12px">
+      <label for="modeSelect">Mode de versement</label>
+      <select id="modeSelect">
+        <option value="">— choisir —</option>
+        <option>Carte bancaire</option>
+        <option>Virement</option>
+        <option>Chèque</option>
+        <option>Espèces</option>
+        <option>Prélèvement</option>
+        <option>Autre</option>
+      </select>
+    </div>
+  </div>
+
+  <h3>Aperçu des données extraites (normalisées)</h3>
   <pre id="preview">{}</pre>
 
 <script>
-/* parseYapla : heuristique adaptée à tes exemples */
+/* ===== Utilities ===== */
+function normalizeAmount(raw) {
+  if (!raw) return '';
+  // Exemples d'input: "100,00 €", "20,50 €", "100 €", "100.00 €"
+  let s = String(raw).replace(/\u00A0/g,' ').trim(); // remove nbsp
+  s = s.replace(/\s/g,''); // remove spaces
+  // remove euro sign and any letters
+  s = s.replace(/[^\d,.\-]/g,'');
+  if (!s) return '';
+  // If comma used as decimal separator and there's no dot
+  if (s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
+  // If decimal part exists and equals .00 -> strip decimals
+  if (s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
+  return s;
+}
+
+function parseDateToYYYYMMDD(raw) {
+  if (!raw) return '';
+  raw = String(raw).trim();
+  // Common input like "22-05-2026 05:52" or "15/04/2026 18:26" or "2026-08-04"
+  // Try to detect ISO first
+  const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  // DD-MM-YYYY or DD/MM/YYYY
+  const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  // Try to find any 4-digit year and surrounding day/month
+  const any = raw.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+  if (any) return `${any[3]}-${any[2]}-${any[1]}`;
+  // As fallback return empty string
+  return '';
+}
+
+/* parseYapla : heuristique adaptée aux exemples fournis */
 function parseYapla(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const data = {};
@@ -32,22 +83,27 @@ function parseYapla(text) {
     const L = lines[i];
     for (const lab of labels) {
       if (L.toLowerCase() === lab.toLowerCase()) {
-        const val = lines[i+1] || '';
+        const val = (lines[i+1] || '').trim();
         if (val) {
           const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
           data[key] = val;
         }
       }
     }
+    // inline email
     const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     if (email) data.courriel = email[0];
+    // phone
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
     if (phone && !/€/.test(L)) data.telephone = (data.telephone || phone[0]).replace(/\s+/g,'');
-    const montant = L.match(/(\d+[,.]\d{2}\s*€)/);
-    if (montant) data.montant = montant[1];
+    // montant
+    const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
+    if (montant) data.montant = montant[0];
+    // code postal
     const cp = L.match(/\b\d{5}\b/);
     if (cp) data.code_postal = cp[0];
   }
+  // fallback prénom/nom sur première ligne si besoin
   if ((!data.prenom || !data.nom) && lines[0]) {
     const first = lines[0].split(/\s+/);
     if (first.length >= 2) {
@@ -55,6 +111,7 @@ function parseYapla(text) {
       if (!data.nom) data.nom = first.slice(1).join(' ');
     }
   }
+  const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
   return {
     prenom: data.prenom || '',
     nom: data.nom || '',
@@ -64,15 +121,15 @@ function parseYapla(text) {
     ville: data.ville || '',
     code_postal: data.code_postal || '',
     pays: data.pays || '',
-    montant: data.montant || '',
-    date_creation: data.date_de_creation || data['date_officielle_du_don'] || ''
+    montant_raw: data.montant || '',
+    montant: normalizeAmount(data.montant || ''),
+    date_raw: date_raw,
+    date_for_form: parseDateToYYYYMMDD(date_raw)
   };
 }
 
-/* === CONFIG : rempli avec ton formulaire (ne pas modifier l'ID) === */
+/* === CONFIG : formAction & mapping prérempli === */
 const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
-
-/* Mapping déduit depuis ton lien prérempli */
 const mapping = {
   prenom: 'entry.804774151',
   nom: 'entry.1947114094',
@@ -82,61 +139,99 @@ const mapping = {
   ville: 'entry.1912325143',
   pays: 'entry.1171780890',
   montant: 'entry.1174142672',
-  date_creation: 'entry.163110140',
+  date_creation: 'entry.163110140',  // si ce champ est une question date, on utilise cette entry (format YYYY-MM-DD)
   mode_paiement: 'entry.879040345'
 };
-/* ================================================================= */
+/* ====================================================== */
 
 const parseBtn = document.getElementById('parseBtn');
 const submitBtn = document.getElementById('submitBtn');
 const prefillBtn = document.getElementById('prefillBtn');
+const preview = document.getElementById('preview');
+const modeSelect = document.getElementById('modeSelect');
 
 parseBtn.addEventListener('click', () => {
   const txt = document.getElementById('raw').value;
   if (!txt.trim()) { alert('Colle d\'abord le texte Yapla.'); return; }
   const parsed = parseYapla(txt);
   window._parsed = parsed;
-  document.getElementById('preview').textContent = JSON.stringify(parsed, null, 2);
+  // Si on a détecté un mode dans le texte (rare), l'utiliser comme valeur par défaut
+  if (parsed.montant_raw && !modeSelect.value) {
+    // nothing automatic here by default
+  }
+  preview.textContent = JSON.stringify(parsed, null, 2);
   submitBtn.disabled = false;
   prefillBtn.disabled = false;
 });
 
+function buildPrefillParams(parsed) {
+  const params = new URLSearchParams();
+  // map fields and send normalized values
+  params.set(mapping.prenom, parsed.prenom || '');
+  params.set(mapping.nom, parsed.nom || '');
+  params.set(mapping.email, parsed.email || '');
+  params.set(mapping.adresse, parsed.adresse || '');
+  params.set(mapping.code_postal, parsed.code_postal || '');
+  params.set(mapping.ville, parsed.ville || '');
+  params.set(mapping.pays, parsed.pays || '');
+  // montant -> send normalized number (no currency symbol)
+  if (parsed.montant) params.set(mapping.montant, parsed.montant);
+  else if (parsed.montant_raw) params.set(mapping.montant, normalizeAmount(parsed.montant_raw));
+  // date -> if we have date_for_form (YYYY-MM-DD) use it
+  if (parsed.date_for_form) params.set(mapping.date_creation, parsed.date_for_form);
+  // mode de paiement -> take from select
+  const mode = modeSelect.value || '';
+  if (mode) params.set(mapping.mode_paiement, mode);
+  return params;
+}
+
 submitBtn.addEventListener('click', () => {
   if (!window._parsed) { alert('Parser d\'abord'); return; }
-
   // Désactiver boutons pour éviter double envoi
   submitBtn.disabled = true;
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
+  modeSelect.disabled = true;
 
-  // Création d'un formulaire POST et soumission dans le même onglet
+  // Construction formulaire POST dans le même onglet
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
-  f.target = '_self'; // <- envoie dans le même onglet
+  f.target = '_self';
   f.style.display = 'none';
 
-  for (const key in mapping) {
+  const parsed = window._parsed;
+  // ajouter champs mapping (hidden inputs)
+  const setInput = (name, value) => {
     const input = document.createElement('input');
     input.type = 'hidden';
-    input.name = mapping[key];
-    input.value = window._parsed[key] || '';
+    input.name = name;
+    input.value = value || '';
     f.appendChild(input);
-  }
+  };
+
+  setInput(mapping.prenom, parsed.prenom || '');
+  setInput(mapping.nom, parsed.nom || '');
+  setInput(mapping.email, parsed.email || '');
+  setInput(mapping.adresse, parsed.adresse || '');
+  setInput(mapping.code_postal, parsed.code_postal || '');
+  setInput(mapping.ville, parsed.ville || '');
+  setInput(mapping.pays, parsed.pays || '');
+  // montant normalized
+  setInput(mapping.montant, parsed.montant || normalizeAmount(parsed.montant_raw || ''));
+  // date normalized (YYYY-MM-DD)
+  setInput(mapping.date_creation, parsed.date_for_form || '');
+  // mode from select
+  setInput(mapping.mode_paiement, modeSelect.value || '');
 
   document.body.appendChild(f);
   f.submit();
-
-  // keep buttons disabled to avoid duplicates; if tu veux réactiver après X secondes:
-  // setTimeout(()=>{ submitBtn.disabled = false; parseBtn.disabled = false; prefillBtn.disabled = false; }, 30000);
+  // keep buttons disabled to avoid duplicates
 });
 
 prefillBtn.addEventListener('click', () => {
   if (!window._parsed) { alert('Parser d\'abord'); return; }
-  const params = new URLSearchParams();
-  for (const key in mapping) {
-    params.set(mapping[key], window._parsed[key] || '');
-  }
+  const params = buildPrefillParams(window._parsed);
   const viewBase = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/viewform';
   const url = viewBase + '?usp=pp_url&' + params.toString();
   window.open(url, '_blank');
