@@ -1,148 +1,102 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Coller Yapla → Google Form</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    :root{
-      --bg:#f4f6f8;
-      --card:#ffffff;
-      --muted:#6b7280;
-      --accent:#0ea5a4;
-      --accent-dark:#0b7f7d;
-      --border:#e6eef0;
-      --success:#16a34a;
-      --danger:#dc2626;
-      --shadow: 0 6px 24px rgba(14,165,164,0.08);
-      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-    }
-
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#f8fbfb 0%,var(--bg) 100%);color:#0f172a}
-    .wrap{max-width:880px;margin:36px auto;padding:20px}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-    header h1{font-size:20px;margin:0}
-    header p{margin:0;color:var(--muted);font-size:13px}
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:12px;
-      padding:18px;
-      box-shadow:var(--shadow);
-    }
-
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0f172a}
-    textarea{
-      width:100%;
-      min-height:140px;
-      resize:vertical;
-      padding:12px;
-      border-radius:8px;
-      border:1px solid #e8eef0;
-      font-size:14px;
-      box-sizing:border-box;
-      background:linear-gradient(180deg,#fff,#fbfeff);
-      color:#0b1220;
-    }
-
+    body{font-family:Arial,Helvetica,sans-serif;margin:18px;background:#f7fbfb;color:#0b1220}
+    .container{max-width:880px;margin:0 auto;background:#fff;border:1px solid #e6eef0;padding:18px;border-radius:10px}
+    h1{font-size:18px;margin:0 0 6px}
+    p.subtitle{margin:0 0 14px;color:#6b7280;font-size:13px}
+    label{display:block;font-weight:600;margin:12px 0 6px}
+    textarea{width:100%;min-height:140px;padding:10px;border-radius:8px;border:1px solid #e8eef0;font-size:14px;background:#fff}
+    select,input{padding:8px 10px;border-radius:8px;border:1px solid #e8eef0;font-size:14px;background:#fff}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
-    select, button, input[type="text"]{
-      padding:8px 12px;
-      border-radius:8px;
-      border:1px solid #e6eef0;
-      background: #fff;
-      font-size:14px;
-    }
-    select:disabled, button:disabled {opacity:0.6;cursor:not-allowed}
-    .btn{
-      background:linear-gradient(180deg,var(--accent),var(--accent-dark));
-      color:#fff;border:none;cursor:pointer;
-      box-shadow:0 6px 18px rgba(11,127,125,0.14);
-    }
-    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(14,165,164,0.12);box-shadow:none}
-    .btn.warn{background:linear-gradient(180deg,#f59e0b,#d97706);color:#fff}
-
-    .preview{
-      margin-top:14px;
-      padding:12px;border-radius:8px;border:1px solid #eef6f6;background:linear-gradient(180deg,#fff,#fbffff);
-    }
-
-    .kv{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;padding:6px 0;border-bottom:1px dashed #f1f6f6}
+    .btn{padding:9px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:#0ea5a4;color:#fff;box-shadow:0 6px 18px rgba(14,165,164,0.12)}
+    .btn-ghost{background:transparent;color:#0ea5a4;border:1px solid rgba(14,165,164,0.12)}
+    .btn-danger{background:#ef4444;color:#fff}
+    .btn:disabled{opacity:0.6;cursor:not-allowed}
+    .preview{margin-top:14px;padding:12px;border-radius:8px;border:1px solid #eef6f6;background:#fbffff}
+    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #f1f6f6}
     .kv:last-child{border-bottom:none}
-    .k{color:var(--muted);font-size:13px}
-    .v{font-weight:600;color:#0b1220}
-
-    .msg{margin-top:10px;font-size:13px;color:var(--danger)}
-    footer{margin-top:14px;display:flex;gap:8px;justify-content:flex-end}
-
-    @media (max-width:620px){
-      .kv{grid-template-columns:120px 1fr}
-      header{flex-direction:column;align-items:flex-start;gap:6px}
-    }
+    .k{color:#6b7280}
+    .v{font-weight:700}
+    .msg{color:#dc2626;margin-top:8px}
+    footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .success { display:flex;align-items:center;gap:12px;background:#ecfdf5;border:1px solid #bbf7d0;padding:12px;border-radius:8px;margin-top:12px }
+    .success .dot{width:40px;height:40px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 6px 18px rgba(16,163,74,0.08)}
+    .success .text{font-weight:600;color:#065f46}
+    .success-actions{margin-left:auto;display:flex;gap:8px}
+    @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}footer{flex-direction:column-reverse}}
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="container">
     <header>
-      <div style="width:48px;height:48px;border-radius:10px;background:linear-gradient(180deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">Y</div>
-      <div>
-        <h1>Coller Yapla → Google Form</h1>
-        <p>Colle le contenu Yapla, choisis le mode de versement, vérifie puis envoie la réponse.</p>
-      </div>
+      <h1>Coller Yapla → Google Form</h1>
+      <p class="subtitle">Colle le texte Yapla, choisis le mode de versement, vérifie puis envoie la réponse.</p>
     </header>
 
-    <div class="card" id="mainCard">
-      <!-- Etape 1 : coller le texte -->
-      <div>
-        <label for="raw">1) Colle le texte copié depuis Yapla</label>
-        <textarea id="raw" placeholder="Colle ici le texte copié depuis Yapla (ex: 'Dons ... Elisabeth Volant ...')"></textarea>
-      </div>
-
-      <!-- Etape 2 : mode de versement requis -->
-      <div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <div style="min-width:220px">
-          <label for="modeSelect">2) Mode de versement (obligatoire)</label>
-          <select id="modeSelect" aria-label="Mode de versement">
-            <option value="">— choisir —</option>
-            <option>Carte bancaire</option>
-            <option>Virement bancaire</option>
-            <option>Chèque bancaire</option>
-            <option>Espèce</option>
-          </select>
-        </div>
-
-        <div style="flex:1;min-width:220px">
-          <label>&nbsp;</label>
-          <div style="font-size:13px;color:var(--muted)">Le mode sélectionné sera injecté dans la question "Mode de versement".</div>
-        </div>
-      </div>
-
-      <div class="controls" style="margin-top:14px">
-        <button id="parseBtn" class="btn ghost" title="Analyser le texte collé">Parser</button>
-        <div id="validationMsg" class="msg" style="display:none"></div>
-      </div>
-
-      <!-- Aperçu -->
-      <div id="previewBox" class="preview" style="display:none">
-        <label style="font-weight:700;margin-bottom:8px;display:block">Aperçu des données extraites (normalisées)</label>
-        <div id="kvlist"></div>
-      </div>
-
-      <footer>
-        <button id="prefillBtn" class="btn ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
-        <button id="submitBtn" class="btn" disabled>Soumettre au Form</button>
-      </footer>
+    <!-- 1) Zone pour coller le texte -->
+    <div>
+      <label for="raw">1) Colle le texte copié depuis Yapla</label>
+      <textarea id="raw" placeholder="Colle ici le texte copié depuis Yapla (ex: 'Dons ... Elisabeth Volant ...')"></textarea>
     </div>
 
-    <div style="margin-top:12px;color:var(--muted);font-size:13px">
-      Astuce : utilise "Ouvrir lien prérempli" pour vérifier avant envoi. Évite les doubles envois — le bouton sera désactivé après soumission.
+    <!-- 2) Mode de versement -->
+    <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="min-width:220px">
+        <label for="modeSelect">2) Mode de versement (obligatoire)</label>
+        <select id="modeSelect" aria-label="Mode de versement">
+          <option value="">— choisir —</option>
+          <option>Carte bancaire</option>
+          <option>Virement bancaire</option>
+          <option>Chèque bancaire</option>
+          <option>Espèce</option>
+        </select>
+      </div>
+      <div style="flex:1;color:#6b7280;font-size:13px;padding-top:6px">
+        Le mode sélectionné sera injecté dans la question "Mode de versement".
+      </div>
+    </div>
+
+    <!-- Parser -->
+    <div class="controls">
+      <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
+      <div id="validationMsg" class="msg" style="display:none"></div>
+    </div>
+
+    <!-- Preview -->
+    <div id="previewBox" class="preview" style="display:none">
+      <div style="font-weight:700;margin-bottom:8px">Aperçu des données extraites (normalisées)</div>
+      <div id="kvlist"></div>
+    </div>
+
+    <!-- Buttons -->
+    <footer>
+      <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
+      <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
+    </footer>
+
+    <!-- Success area (hidden by default) -->
+    <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
+      <div class="dot">✓</div>
+      <div class="text">Réponse envoyée — succès.</div>
+      <div class="success-actions">
+        <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
+        <button id="finishBtn" class="btn btn-danger">Non, terminer</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;color:#6b7280;font-size:13px">
+      Astuce : utilise "Ouvrir lien prérempli" pour vérifier avant envoi.
     </div>
   </div>
 
 <script>
-/* ===== Configuration (ne pas modifier l'ID du formulaire) ===== */
+/* === Configuration (ne pas modifier l'ID du formulaire) === */
 const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
 const mapping = {
   prenom: 'entry.804774151',
@@ -156,7 +110,7 @@ const mapping = {
   date_creation: 'entry.163110140',
   mode_paiement: 'entry.879040345'
 };
-/* ============================================================ */
+/* ====================================================== */
 
 const rawEl = document.getElementById('raw');
 const modeEl = document.getElementById('modeSelect');
@@ -167,7 +121,14 @@ const validationMsg = document.getElementById('validationMsg');
 const previewBox = document.getElementById('previewBox');
 const kvlist = document.getElementById('kvlist');
 
-/* Utilities */
+const successBox = document.getElementById('successBox');
+const anotherBtn = document.getElementById('anotherBtn');
+const finishBtn = document.getElementById('finishBtn');
+
+function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
+function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
+
+/* Normalisation montant */
 function normalizeAmount(raw){
   if(!raw) return '';
   let s = String(raw).replace(/\u00A0/g,' ').trim();
@@ -178,6 +139,8 @@ function normalizeAmount(raw){
   if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
   return s;
 }
+
+/* Normalisation date to YYYY-MM-DD */
 function parseDateToYYYYMMDD(raw){
   if(!raw) return '';
   raw = String(raw).trim();
@@ -188,9 +151,9 @@ function parseDateToYYYYMMDD(raw){
   return '';
 }
 
-/* parseYapla : retourne uniquement les champs normalisés que l'on veut afficher/envoyer */
+/* Parse Yapla: retourne uniquement les champs normalisés qu'on souhaite afficher/envoyer */
 function parseYapla(text){
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
   const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
   for(let i=0;i<lines.length;i++){
@@ -204,22 +167,18 @@ function parseYapla(text){
         }
       }
     }
-    // email inline
     const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     if(email) data.courriel = email[0];
-    // montant
     const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
     if(montant) data.montant = montant[0];
-    // code postal
     const cp = L.match(/\b\d{5}\b/);
     if(cp) data.code_postal = cp[0];
-    // phone is captured but we will not show it in preview
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
     if(phone) data.telephone = phone[0].replace(/\s+/g,'');
   }
   if((!data.prenom || !data.nom) && lines[0]){
     const first = lines[0].split(/\s+/);
-    if(first.length >= 2){
+    if(first.length>=2){
       if(!data.prenom) data.prenom = first[0];
       if(!data.nom) data.nom = first.slice(1).join(' ');
     }
@@ -235,19 +194,11 @@ function parseYapla(text){
     pays: data.pays || '',
     montant: normalizeAmount(data.montant || ''),
     date: parseDateToYYYYMMDD(date_raw) || ''
-    // note: telephone and raw fields intentionally omitted from returned object
+    // telephone and raw fields intentionally omitted
   };
 }
 
-/* UI helpers */
-function showValidation(msg){
-  validationMsg.style.display = 'block';
-  validationMsg.textContent = msg;
-}
-function clearValidation(){
-  validationMsg.style.display = 'none';
-  validationMsg.textContent = '';
-}
+/* Render preview */
 function renderPreview(parsed, modeValue){
   kvlist.innerHTML = '';
   const entries = [
@@ -263,30 +214,26 @@ function renderPreview(parsed, modeValue){
     ['Mode de versement', modeValue || '']
   ];
   for(const [k,v] of entries){
-    const node = document.createElement('div');
-    node.className = 'kv';
-    node.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`;
-    kvlist.appendChild(node);
+    const row = document.createElement('div');
+    row.className = 'kv';
+    row.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`;
+    kvlist.appendChild(row);
   }
+}
+
+/* Validation: raw + mode required before parser */
+function canParse(){
+  const raw = rawEl.value.trim();
+  const mode = modeEl.value.trim();
+  if(!raw){ showMsg("Veuillez coller d'abord le texte Yapla."); return false; }
+  if(!mode){ showMsg("Veuillez choisir le mode de versement avant de parser."); return false; }
+  clearMsg(); return true;
 }
 
 /* State */
 let lastParsed = null;
 
-/* Validation rules before parsing:
-   - raw must not be empty
-   - mode must be selected
-*/
-function canParse(){
-  const raw = rawEl.value.trim();
-  const mode = modeEl.value.trim();
-  if(!raw) { showValidation('Veuillez coller d\'abord le texte Yapla.'); return false; }
-  if(!mode){ showValidation('Veuillez choisir le mode de versement avant de parser.'); return false; }
-  clearValidation();
-  return true;
-}
-
-/* Parse button */
+/* Handlers */
 parseBtn.addEventListener('click', () => {
   if(!canParse()) return;
   const txt = rawEl.value;
@@ -296,10 +243,10 @@ parseBtn.addEventListener('click', () => {
   previewBox.style.display = 'block';
   prefillBtn.disabled = false;
   submitBtn.disabled = false;
-  // Focus submit optionally
+  clearMsg();
 });
 
-/* Build prefill query and open viewform */
+/* Build prefill URL */
 function buildPrefillURL(parsed){
   const params = new URLSearchParams();
   if(parsed.prenom) params.set(mapping.prenom, parsed.prenom);
@@ -316,30 +263,33 @@ function buildPrefillURL(parsed){
   return viewBase + '?usp=pp_url&' + params.toString();
 }
 
-/* Prefill button */
+/* Prefill */
 prefillBtn.addEventListener('click', () => {
-  if(!lastParsed){ showValidation('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
-  clearValidation();
+  if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
+  clearMsg();
   const url = buildPrefillURL(lastParsed);
   window.open(url, '_blank');
 });
 
-/* Submit button: build hidden form and submit in same tab, then disable to avoid duplicates */
+/* Submit: open Google form submission in a new tab and show success indicator locally.
+   Note: to keep the page and display success, we submit to a new tab (_blank).
+*/
 submitBtn.addEventListener('click', () => {
-  if(!lastParsed){ showValidation('Parser d\'abord avant de soumettre.'); return; }
-  clearValidation();
-  // Disable UI
+  if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
+  clearMsg();
+
+  // Disable UI to avoid double clicks
   submitBtn.disabled = true;
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
   rawEl.disabled = true;
   modeEl.disabled = true;
 
-  // Build and submit
+  // Build and submit in new tab so current page remains and we can show success
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
-  f.target = '_self';
+  f.target = '_blank';  // open confirmation in new tab
   f.style.display = 'none';
   const setInput = (name, value) => {
     const inp = document.createElement('input');
@@ -360,7 +310,35 @@ submitBtn.addEventListener('click', () => {
   setInput(mapping.mode_paiement, modeEl.value || '');
   document.body.appendChild(f);
   f.submit();
-  // Buttons remain disabled to prevent duplicates. Reload page to process new entry.
+
+  // Show local success indicator and options
+  successBox.style.display = 'flex';
+});
+
+/* After success: user chooses whether they have another to do */
+anotherBtn.addEventListener('click', () => {
+  // reset UI to allow a new entry
+  rawEl.value = '';
+  modeEl.value = '';
+  lastParsed = null;
+  previewBox.style.display = 'none';
+  kvlist.innerHTML = '';
+  successBox.style.display = 'none';
+  submitBtn.disabled = true;
+  prefillBtn.disabled = true;
+  parseBtn.disabled = false;
+  rawEl.disabled = false;
+  modeEl.disabled = false;
+  clearMsg();
+  rawEl.focus();
+});
+
+finishBtn.addEventListener('click', () => {
+  // finalise: disable everything and show a final message
+  successBox.querySelector('.text').textContent = 'Terminé — tu peux fermer cet onglet.';
+  anotherBtn.disabled = true;
+  finishBtn.disabled = true;
+  // keep rest disabled
 });
 </script>
 </body>
