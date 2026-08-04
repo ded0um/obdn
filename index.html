@@ -5,27 +5,40 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Strictement noir & blanc */
+    /* Noir & blanc with container background set to grey */
     :root{
-      --white:#ffffff;
-      --black:#000000;
+      --page-bg: #ffffff;      /* page background: white */
+      --container-bg: #e6e6e6; /* container background: grey as requested */
+      --input-bg: #ffffff;     /* inputs remain white for contrast */
+      --header-bg: #d9d9d9;    /* subtle grey banner behind header/instructions */
+      --black: #000000;
       --shadow: none;
     }
 
-    html,body{height:100%;margin:0;background:var(--white);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    .container{max-width:880px;margin:24px auto;padding:16px;background:var(--white);border:1px solid var(--black);border-radius:6px;box-shadow:var(--shadow)}
-    h1{font-size:18px;margin:0 0 8px;color:var(--black)}
+    html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
+    .outer{max-width:920px;margin:28px auto;padding:0}
+    /* Container now grey */
+    .container{background:var(--container-bg);border:1px solid var(--black);border-radius:6px;box-shadow:var(--shadow);padding:0;overflow:hidden}
+    /* Header banner (slightly darker grey) */
+    .header-banner{
+      background:var(--header-bg);
+      padding:16px 18px;
+      border-bottom:1px solid var(--black);
+    }
+    .header-title{font-size:18px;margin:0 0 8px;font-weight:900;color:var(--black)}
+    /* Body content */
+    .body{padding:16px;background:transparent} /* keep body transparent so container grey shows */
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
-    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--white);color:var(--black);box-sizing:border-box}
-    select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--white);color:var(--black)}
+    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
+    select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black)}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 
-    /* Boutons carrés noir/blanc */
+    /* Buttons: square black/white */
     .btn{
       padding:8px 12px;
       border-radius:2px;
       border:2px solid var(--black);
-      background: var(--white);
+      background: var(--input-bg);
       color: var(--black);
       font-weight:700;
       cursor:pointer;
@@ -36,93 +49,84 @@
     }
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+    .btn-primary{ background: var(--black); color: var(--input-bg); }
+    .btn-ghost{ background: var(--input-bg); color: var(--black); }
 
-    /* Primary: fond noir, texte blanc */
-    .btn-primary{
-      background: var(--black);
-      color: var(--white);
-    }
-    /* Ghost: fond blanc, contour noir (default .btn) */
-    .btn-ghost{ background: var(--white); color: var(--black); }
-
-    /* Preview */
-    .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--white)}
+    /* Preview: keep white panel inside grey container for readability */
+    .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px}
     .field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--black)}
     .field:last-child{border-bottom:none}
     .label{font-weight:700}
     .value{font-weight:700}
     .msg{color:var(--black);font-weight:700;margin-top:8px}
-    footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
-
-    /* Success area */
-    .success { display:flex;align-items:center;gap:12px;border:1px solid var(--black);padding:12px;border-radius:6px;margin-top:12px;background:var(--white) }
-    .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--white);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .success { display:flex;align-items:center;gap:12px;border:1px solid var(--black);padding:12px;border-radius:6px;margin-top:12px;background:var(--input-bg) }
+    .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--input-bg);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
     .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
 
-    @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}footer{flex-direction:column-reverse}}
+    @media(max-width:640px){
+      .controls{flex-direction:column;align-items:stretch}
+      .header-banner{padding:14px}
+    }
   </style>
 </head>
 <body>
-  <div class="container" role="main">
-    <header>
-      <h1>Parseur et Envoyeur vers GForm</h1>
-    </header>
-
-    <!-- 1) Zone pour coller le texte -->
-    <div>
-      <label for="raw">1) Colle le texte copié depuis Yapla</label>
-      <textarea id="raw" placeholder=""></textarea>
-    </div>
-
-    <!-- 2) Mode de versement -->
-    <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <div style="min-width:220px">
-        <label for="modeSelect">2) Mode de versement (obligatoire)</label>
-        <select id="modeSelect" aria-label="Mode de versement">
-          <option value="">— choisir —</option>
-          <option>Carte bancaire</option>
-          <option>Virement bancaire</option>
-          <option>Chèque bancaire</option>
-          <option>Espèce</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Controls aligned -->
-    <div class="controls" style="margin-top:12px">
-      <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
-      <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
-      <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
-      <div id="validationMsg" class="msg" style="display:none"></div>
-    </div>
-
-    <!-- Preview -->
-    <div id="previewBox" class="preview" style="display:none" aria-live="polite">
-      <!-- DON section -->
-      <div class="section-title">----DON----</div>
-      <div id="donFields">
-        <!-- MONTANT / DATE / MODE DE VERSEMENT will be injected here -->
+  <div class="outer">
+    <div class="container" role="main">
+      <!-- Grey banner with title only (instruction lines removed as requested) -->
+      <div class="header-banner" aria-hidden="false">
+        <div class="header-title">Parseur et Envoyeur vers GForm</div>
       </div>
 
-      <!-- Spacer -->
-      <div style="height:8px"></div>
+      <!-- Main body (inputs white for contrast) -->
+      <div class="body">
+        <!-- 1) Zone pour coller le texte -->
+        <div>
+          <label for="raw">1) Colle le texte copié depuis Yapla</label>
+          <textarea id="raw" placeholder=""></textarea>
+        </div>
 
-      <!-- DONATEUR section -->
-      <div class="section-title">----DONATEUR----</div>
-      <div id="donateurFields">
-        <!-- donor fields injected here -->
-      </div>
-    </div>
+        <!-- 2) Mode de versement -->
+        <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="min-width:220px">
+            <label for="modeSelect">2) Mode de versement (obligatoire)</label>
+            <select id="modeSelect" aria-label="Mode de versement">
+              <option value="">— choisir —</option>
+              <option>Carte bancaire</option>
+              <option>Virement bancaire</option>
+              <option>Chèque bancaire</option>
+              <option>Espèce</option>
+            </select>
+          </div>
+        </div>
 
-    <!-- Success area -->
-    <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
-      <div class="dot">✓</div>
-      <div class="text">Réponse envoyée — succès.</div>
-      <div class="success-actions">
-        <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
-        <button id="finishBtn" class="btn btn-ghost">Non, terminer</button>
+        <!-- Controls aligned -->
+        <div class="controls" style="margin-top:12px">
+          <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
+          <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
+          <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
+          <div id="validationMsg" class="msg" style="display:none"></div>
+        </div>
+
+        <!-- Preview -->
+        <div id="previewBox" class="preview" style="display:none" aria-live="polite">
+          <div class="section-title">----DON----</div>
+          <div id="donFields"></div>
+          <div style="height:8px"></div>
+          <div class="section-title">----DONATEUR----</div>
+          <div id="donateurFields"></div>
+        </div>
+
+        <!-- Success area -->
+        <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
+          <div class="dot">✓</div>
+          <div class="text">Réponse envoyée — succès.</div>
+          <div class="success-actions">
+            <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
+            <button id="finishBtn" class="btn btn-ghost">Non, terminer</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -177,10 +181,8 @@ function normalizeAmount(raw){
 function parseDateToYYYYMMDD(raw){
   if(!raw) return '';
   raw = String(raw).trim();
-  // ISO already
   const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  // DD-MM-YYYY or DD/MM/YYYY
   const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
   if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
   return '';
@@ -194,10 +196,7 @@ function isoToDDMMYYYY(iso){
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-/* Parse Yapla: retourne uniquement les champs normalisés qu'on souhaite afficher/envoyer.
-   date_iso = YYYY-MM-DD (envoyé au form)
-   date_display = DD/MM/YYYY (affiché en aperçu)
-*/
+/* Parse Yapla: returns normalized fields */
 function parseYapla(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
@@ -241,13 +240,12 @@ function parseYapla(text){
     code_postal: data.code_postal || '',
     pays: data.pays || '',
     montant: normalizeAmount(data.montant || ''),
-    date_iso: date_iso,         // envoyé (YYYY-MM-DD)
-    date_display: date_display  // affiché (DD/MM/YYYY)
-    // telephone and raw fields intentionally omitted
+    date_iso: date_iso,         // sent (YYYY-MM-DD)
+    date_display: date_display  // shown (DD/MM/YYYY)
   };
 }
 
-/* Render preview in requested order with small separations */
+/* Render preview in requested order */
 function renderPreview(parsed, modeValue){
   donFields.innerHTML = '';
   donateurFields.innerHTML = '';
@@ -288,7 +286,7 @@ function renderPreview(parsed, modeValue){
   }
 }
 
-/* Validation: raw + mode required before parser */
+/* Validation */
 function canParse(){
   const raw = rawEl.value.trim();
   const mode = modeEl.value.trim();
@@ -371,7 +369,7 @@ submitBtn.addEventListener('click', () => {
   setInput(mapping.ville, lastParsed.ville || '');
   setInput(mapping.pays, lastParsed.pays || '');
   setInput(mapping.montant, lastParsed.montant || '');
-  setInput(mapping.date_creation, lastParsed.date_iso || ''); // send ISO format
+  setInput(mapping.date_creation, lastParsed.date_iso || '');
   setInput(mapping.mode_paiement, modeEl.value || '');
   document.body.appendChild(f);
   f.submit();
