@@ -2,61 +2,99 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Coller Yapla → Google Form</title>
+  <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Sobriété : palette neutre (gris / anthracite), pas de couleurs vives */
+    /* Palette neutre, boutons carrés */
     :root{
       --bg: #f5f6f7;
       --card: #ffffff;
       --muted: #6b7280;
       --text: #0f1724;
       --border: #e6e9ec;
-      --primary: #374151; /* sombre, discret */
-      --ghost-border: #d1d5db;
       --shadow: 0 8px 24px rgba(15,23,36,0.06);
       --success-bg: #eef2f1;
       --success-dot: #334155;
+      --btn-face: #e0e0e0;
+      --btn-border-light: #ffffff;
+      --btn-border-dark: #808080;
+      --btn-pressed-light: #cfcfcf;
     }
 
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
-    .container{max-width:880px;margin:24px auto;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)}
-    h1{font-size:18px;margin:0}
-    p.subtitle{margin:6px 0 14px;color:var(--muted);font-size:13px}
+    .container{max-width:880px;margin:24px auto;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow)}
+    h1{font-size:18px;margin:0 0 8px}
     label{display:block;font-weight:600;margin:12px 0 6px}
-    textarea{width:100%;min-height:140px;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text);box-sizing:border-box}
-    select,input{padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text)}
-    .controls{display:flex;gap:8px;align-items:center;margin-top:12px}
-    .btn{padding:9px 14px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
-    .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(55,65,81,0.08)}
-    .btn-ghost{background:transparent;color:var(--primary);border:1px solid var(--ghost-border)}
-    .btn-danger{background:#b91c1c;color:#fff}
-    .btn:disabled{opacity:0.6;cursor:not-allowed}
-    .preview{margin-top:14px;padding:12px;border-radius:8px;border:1px solid #eef1f3;background:#fbfcfd}
+    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text);box-sizing:border-box}
+    select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text)}
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+    /* Boutons carrés, bords nets */
+    .btn{
+      padding:8px 12px;
+      border-radius:2px;
+      border:2px solid var(--btn-border-dark);
+      background: linear-gradient(#f1f1f1,#dedede);
+      color:#000;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:
+        inset 1px 1px 0 var(--btn-border-light),
+        inset -1px -1px 0 rgba(0,0,0,0.12);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .btn:active{
+      background: linear-gradient(var(--btn-pressed-light),#d0d0d0);
+      box-shadow:
+        inset -1px -1px 0 var(--btn-border-dark),
+        inset 1px 1px 0 var(--btn-border-light);
+    }
+    .btn:disabled{
+      opacity:0.6;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+    .btn-primary{
+      background: linear-gradient(#dcdcdc,#cfcfcf);
+      border-color: #696969;
+      color:#000;
+    }
+    .btn-ghost{
+      background: linear-gradient(#f9f9f9,#f0f0f0);
+      border-color: #cfcfcf;
+      color: #222;
+      font-weight:600;
+    }
+    .btn-danger{
+      background: linear-gradient(#f1dede,#e6bcbc);
+      border-color:#b03030;
+      color:#2b0000;
+    }
+
+    .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid #eef1f3;background:#fbfcfd}
     .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #f1f4f6}
     .kv:last-child{border-bottom:none}
     .k{color:var(--muted)}
     .v{font-weight:700}
     .msg{color:#b91c1c;margin-top:8px}
-    footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
-    .success { display:flex;align-items:center;gap:12px;background:var(--success-bg);border:1px solid #dbe7e3;padding:12px;border-radius:8px;margin-top:12px }
-    .success .dot{width:40px;height:40px;border-radius:50%;background:var(--success-dot);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
-    .success .text{font-weight:700;color:var(--primary)}
+    .success { display:flex;align-items:center;gap:12px;background:var(--success-bg);border:1px solid #dbe7e3;padding:12px;border-radius:6px;margin-top:12px }
+    .success .dot{width:36px;height:36px;border-radius:2px;background:var(--success-dot);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .success .text{font-weight:700;color:var(--text)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
-    @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}footer{flex-direction:column-reverse}}
+    @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}}
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>Coller Yapla → Google Form</h1>
-      <p class="subtitle">Colle le texte Yapla, choisis le mode de versement, vérifie puis envoie la réponse.</p>
+      <h1>Parseur et Envoyeur vers GForm</h1>
     </header>
 
     <!-- 1) Zone pour coller le texte -->
     <div>
       <label for="raw">1) Colle le texte copié depuis Yapla</label>
-      <textarea id="raw" placeholder="Colle ici le texte copié depuis Yapla (ex: 'Dons ... Elisabeth Volant ...')"></textarea>
+      <textarea id="raw" placeholder=""></textarea>
     </div>
 
     <!-- 2) Mode de versement -->
@@ -71,14 +109,13 @@
           <option>Espèce</option>
         </select>
       </div>
-      <div style="flex:1;color:var(--muted);font-size:13px;padding-top:6px">
-        Le mode sélectionné sera injecté dans la question "Mode de versement".
-      </div>
     </div>
 
-    <!-- Parser -->
-    <div class="controls">
+    <!-- Controls aligned: Parser / Ouvrir lien prérempli / Soumettre -->
+    <div class="controls" style="margin-top:12px">
       <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
+      <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
+      <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
       <div id="validationMsg" class="msg" style="display:none"></div>
     </div>
 
@@ -88,12 +125,6 @@
       <div id="kvlist"></div>
     </div>
 
-    <!-- Buttons -->
-    <footer>
-      <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
-      <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
-    </footer>
-
     <!-- Success area (hidden by default) -->
     <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
       <div class="dot">✓</div>
@@ -102,10 +133,6 @@
         <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
         <button id="finishBtn" class="btn btn-danger">Non, terminer</button>
       </div>
-    </div>
-
-    <div style="margin-top:12px;color:var(--muted);font-size:13px">
-      Astuce : utilise "Ouvrir lien prérempli" pour vérifier avant envoi.
     </div>
   </div>
 
