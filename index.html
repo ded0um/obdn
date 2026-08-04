@@ -27,14 +27,11 @@
 function parseYapla(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const data = {};
-  // labels que l'on recherche (valeur généralement sur la ligne suivante)
   const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
   for (let i=0;i<lines.length;i++) {
     const L = lines[i];
-    // exact label on its own line -> value is next non-empty line
     for (const lab of labels) {
       if (L.toLowerCase() === lab.toLowerCase()) {
-        // get next non-empty (already filtered)
         const val = lines[i+1] || '';
         if (val) {
           const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
@@ -42,20 +39,15 @@ function parseYapla(text) {
         }
       }
     }
-    // inline email
     const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     if (email) data.courriel = email[0];
-    // phone
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
     if (phone && !/€/.test(L)) data.telephone = (data.telephone || phone[0]).replace(/\s+/g,'');
-    // montant
     const montant = L.match(/(\d+[,.]\d{2}\s*€)/);
     if (montant) data.montant = montant[1];
-    // code postal
     const cp = L.match(/\b\d{5}\b/);
     if (cp) data.code_postal = cp[0];
   }
-  // fallback prénom/nom si première ligne contient un nom complet (cas possible)
   if ((!data.prenom || !data.nom) && lines[0]) {
     const first = lines[0].split(/\s+/);
     if (first.length >= 2) {
@@ -82,59 +74,69 @@ const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX
 
 /* Mapping déduit depuis ton lien prérempli */
 const mapping = {
-  prenom: 'entry.804774151',        // Cédric
-  nom: 'entry.1947114094',         // DUMONT
-  email: 'entry.81735574',         // cedricrl.dumont@gmail.com
-  adresse: 'entry.1914487624',     // 325 rue de Renoval
-  code_postal: 'entry.1544391775', // 80260
-  ville: 'entry.1912325143',       // Flesselles
-  pays: 'entry.1171780890',        // France
-  montant: 'entry.1174142672',     // 100 (ton prérempli)
-  date_creation: 'entry.163110140',// 2026-08-04
-  mode_paiement: 'entry.879040345' // Carte bancaire
+  prenom: 'entry.804774151',
+  nom: 'entry.1947114094',
+  email: 'entry.81735574',
+  adresse: 'entry.1914487624',
+  code_postal: 'entry.1544391775',
+  ville: 'entry.1912325143',
+  pays: 'entry.1171780890',
+  montant: 'entry.1174142672',
+  date_creation: 'entry.163110140',
+  mode_paiement: 'entry.879040345'
 };
 /* ================================================================= */
 
-document.getElementById('parseBtn').addEventListener('click', () => {
+const parseBtn = document.getElementById('parseBtn');
+const submitBtn = document.getElementById('submitBtn');
+const prefillBtn = document.getElementById('prefillBtn');
+
+parseBtn.addEventListener('click', () => {
   const txt = document.getElementById('raw').value;
   if (!txt.trim()) { alert('Colle d\'abord le texte Yapla.'); return; }
   const parsed = parseYapla(txt);
   window._parsed = parsed;
   document.getElementById('preview').textContent = JSON.stringify(parsed, null, 2);
-  document.getElementById('submitBtn').disabled = false;
-  document.getElementById('prefillBtn').disabled = false;
+  submitBtn.disabled = false;
+  prefillBtn.disabled = false;
 });
 
-document.getElementById('submitBtn').addEventListener('click', () => {
+submitBtn.addEventListener('click', () => {
   if (!window._parsed) { alert('Parser d\'abord'); return; }
-  // Création d'un formulaire POST et soumission (ouvre dans nouvel onglet)
+
+  // Désactiver boutons pour éviter double envoi
+  submitBtn.disabled = true;
+  parseBtn.disabled = true;
+  prefillBtn.disabled = true;
+
+  // Création d'un formulaire POST et soumission dans le même onglet
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
-  f.target = '_blank';
+  f.target = '_self'; // <- envoie dans le même onglet
   f.style.display = 'none';
-  // ajouter tous les mappings connus
+
   for (const key in mapping) {
     const input = document.createElement('input');
     input.type = 'hidden';
     input.name = mapping[key];
-    // valeur : si champ non présent, envoyer chaîne vide
     input.value = window._parsed[key] || '';
     f.appendChild(input);
   }
+
   document.body.appendChild(f);
   f.submit();
-  setTimeout(()=>f.remove(), 1500);
+
+  // keep buttons disabled to avoid duplicates; if tu veux réactiver après X secondes:
+  // setTimeout(()=>{ submitBtn.disabled = false; parseBtn.disabled = false; prefillBtn.disabled = false; }, 30000);
 });
 
-document.getElementById('prefillBtn').addEventListener('click', () => {
+prefillBtn.addEventListener('click', () => {
   if (!window._parsed) { alert('Parser d\'abord'); return; }
-  // Ouvre le lien prérempli (viewform with query string) pour vérification manuelle
   const params = new URLSearchParams();
   for (const key in mapping) {
     params.set(mapping[key], window._parsed[key] || '');
   }
-  // Construire URL viewform?entry.x=...
   const viewBase = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/viewform';
   const url = viewBase + '?usp=pp_url&' + params.toString();
   window.open(url, '_blank');
