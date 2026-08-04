@@ -163,14 +163,27 @@ function normalizeAmount(raw){
 function parseDateToYYYYMMDD(raw){
   if(!raw) return '';
   raw = String(raw).trim();
+  // ISO already
   const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  // DD-MM-YYYY or DD/MM/YYYY
   const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
   if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
   return '';
 }
 
-/* Parse Yapla: retourne uniquement les champs normalisés qu'on souhaite afficher/envoyer */
+/* Convert ISO YYYY-MM-DD -> DD/MM/YYYY for preview */
+function isoToDDMMYYYY(iso){
+  if(!iso) return '';
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+/* Parse Yapla: retourne uniquement les champs normalisés qu'on souhaite afficher/envoyer.
+   date_iso = YYYY-MM-DD (envoyé au form)
+   date_display = DD/MM/YYYY (affiché en aperçu)
+*/
 function parseYapla(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
@@ -203,6 +216,8 @@ function parseYapla(text){
     }
   }
   const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
+  const date_iso = parseDateToYYYYMMDD(date_raw) || '';
+  const date_display = isoToDDMMYYYY(date_iso); // '' if none
   return {
     prenom: data.prenom || '',
     nom: data.nom || '',
@@ -212,12 +227,13 @@ function parseYapla(text){
     code_postal: data.code_postal || '',
     pays: data.pays || '',
     montant: normalizeAmount(data.montant || ''),
-    date: parseDateToYYYYMMDD(date_raw) || ''
+    date_iso: date_iso,         // envoyé (YYYY-MM-DD)
+    date_display: date_display  // affiché (DD/MM/YYYY)
     // telephone and raw fields intentionally omitted
   };
 }
 
-/* Render preview */
+/* Render preview: show date_display (DD/MM/YYYY) */
 function renderPreview(parsed, modeValue){
   kvlist.innerHTML = '';
   const entries = [
@@ -229,7 +245,7 @@ function renderPreview(parsed, modeValue){
     ['Code postal', parsed.code_postal || ''],
     ['Pays', parsed.pays || ''],
     ['Montant', parsed.montant || ''],
-    ['Date (YYYY-MM-DD)', parsed.date || ''],
+    ['Date (JJ/MM/AAAA)', parsed.date_display || ''],
     ['Mode de versement', modeValue || '']
   ];
   for(const [k,v] of entries){
@@ -265,7 +281,7 @@ parseBtn.addEventListener('click', () => {
   clearMsg();
 });
 
-/* Build prefill URL */
+/* Build prefill URL (uses date_iso for sending) */
 function buildPrefillURL(parsed){
   const params = new URLSearchParams();
   if(parsed.prenom) params.set(mapping.prenom, parsed.prenom);
@@ -276,7 +292,7 @@ function buildPrefillURL(parsed){
   if(parsed.ville) params.set(mapping.ville, parsed.ville);
   if(parsed.pays) params.set(mapping.pays, parsed.pays);
   if(parsed.montant) params.set(mapping.montant, parsed.montant);
-  if(parsed.date) params.set(mapping.date_creation, parsed.date);
+  if(parsed.date_iso) params.set(mapping.date_creation, parsed.date_iso); // YYYY-MM-DD
   if(modeEl.value) params.set(mapping.mode_paiement, modeEl.value);
   const viewBase = formAction.replace('/formResponse','/viewform');
   return viewBase + '?usp=pp_url&' + params.toString();
@@ -290,7 +306,7 @@ prefillBtn.addEventListener('click', () => {
   window.open(url, '_blank');
 });
 
-/* Submit: open Google form submission in a new tab and show success indicator locally. */
+/* Submit: uses date_iso when sending */
 submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
@@ -323,7 +339,7 @@ submitBtn.addEventListener('click', () => {
   setInput(mapping.ville, lastParsed.ville || '');
   setInput(mapping.pays, lastParsed.pays || '');
   setInput(mapping.montant, lastParsed.montant || '');
-  setInput(mapping.date_creation, lastParsed.date || '');
+  setInput(mapping.date_creation, lastParsed.date_iso || ''); // send ISO format
   setInput(mapping.mode_paiement, modeEl.value || '');
   document.body.appendChild(f);
   f.submit();
