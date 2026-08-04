@@ -47,14 +47,15 @@
 
     /* Preview */
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--white)}
-    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--black)}
-    .kv:last-child{border-bottom:none}
-    .k{font-weight:700;color:var(--black)}
-    .v{font-weight:700;color:var(--black)}
+    .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px}
+    .field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--black)}
+    .field:last-child{border-bottom:none}
+    .label{font-weight:700}
+    .value{font-weight:700}
     .msg{color:var(--black);font-weight:700;margin-top:8px}
     footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
 
-    /* Success area in black & white */
+    /* Success area */
     .success { display:flex;align-items:center;gap:12px;border:1px solid var(--black);padding:12px;border-radius:6px;margin-top:12px;background:var(--white) }
     .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--white);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
     .success .text{font-weight:700;color:var(--black)}
@@ -99,8 +100,20 @@
 
     <!-- Preview -->
     <div id="previewBox" class="preview" style="display:none" aria-live="polite">
-      <div style="font-weight:700;margin-bottom:8px">Aperçu des données extraites (normalisées)</div>
-      <div id="kvlist"></div>
+      <!-- DON section -->
+      <div class="section-title">----DON----</div>
+      <div id="donFields">
+        <!-- MONTANT / DATE / MODE DE VERSEMENT will be injected here -->
+      </div>
+
+      <!-- Spacer -->
+      <div style="height:8px"></div>
+
+      <!-- DONATEUR section -->
+      <div class="section-title">----DONATEUR----</div>
+      <div id="donateurFields">
+        <!-- donor fields injected here -->
+      </div>
     </div>
 
     <!-- Success area -->
@@ -138,7 +151,8 @@ const prefillBtn = document.getElementById('prefillBtn');
 const submitBtn = document.getElementById('submitBtn');
 const validationMsg = document.getElementById('validationMsg');
 const previewBox = document.getElementById('previewBox');
-const kvlist = document.getElementById('kvlist');
+const donFields = document.getElementById('donFields');
+const donateurFields = document.getElementById('donateurFields');
 
 const successBox = document.getElementById('successBox');
 const anotherBtn = document.getElementById('anotherBtn');
@@ -233,26 +247,44 @@ function parseYapla(text){
   };
 }
 
-/* Render preview: show date_display (DD/MM/YYYY) */
+/* Render preview in requested order with small separations */
 function renderPreview(parsed, modeValue){
-  kvlist.innerHTML = '';
-  const entries = [
-    ['Prénom', parsed.prenom || ''],
-    ['Nom', parsed.nom || ''],
-    ['Courriel', parsed.email || ''],
-    ['Adresse', parsed.adresse || ''],
-    ['Ville', parsed.ville || ''],
-    ['Code postal', parsed.code_postal || ''],
-    ['Pays', parsed.pays || ''],
-    ['Montant', parsed.montant || ''],
-    ['Date (JJ/MM/AAAA)', parsed.date_display || ''],
-    ['Mode de versement', modeValue || '']
+  donFields.innerHTML = '';
+  donateurFields.innerHTML = '';
+
+  // DON section: MONTANT, DATE, MODE DE VERSEMENT
+  const donEntries = [
+    ['MONTANT', parsed.montant || ''],
+    ['DATE', parsed.date_display || ''],
+    ['MODE DE VERSEMENT', modeValue || '']
   ];
-  for(const [k,v] of entries){
+  for(const [label, value] of donEntries){
     const row = document.createElement('div');
-    row.className = 'kv';
-    row.innerHTML = `<div class="k">${k}</div><div class="v">${v}</div>`;
-    kvlist.appendChild(row);
+    row.className = 'field';
+    row.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+    donFields.appendChild(row);
+  }
+
+  // small separation
+  const spacer = document.createElement('div');
+  spacer.style.height = '6px';
+  donFields.appendChild(spacer);
+
+  // DONATEUR section: NOM, PRENOM, ADRESSE, CODE POSTAL, VILLE, PAYS, ADRESSE MAIL
+  const donorEntries = [
+    ['NOM', parsed.nom || ''],
+    ['PRENOM', parsed.prenom || ''],
+    ['ADRESSE', parsed.adresse || ''],
+    ['CODE POSTAL', parsed.code_postal || ''],
+    ['VILLE', parsed.ville || ''],
+    ['PAYS', parsed.pays || ''],
+    ['ADRESSE MAIL', parsed.email || '']
+  ];
+  for(const [label, value] of donorEntries){
+    const row = document.createElement('div');
+    row.className = 'field';
+    row.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+    donateurFields.appendChild(row);
   }
 }
 
@@ -355,7 +387,8 @@ anotherBtn.addEventListener('click', () => {
   modeEl.value = '';
   lastParsed = null;
   previewBox.style.display = 'none';
-  kvlist.innerHTML = '';
+  donFields.innerHTML = '';
+  donateurFields.innerHTML = '';
   successBox.style.display = 'none';
   submitBtn.disabled = true;
   prefillBtn.disabled = true;
