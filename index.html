@@ -5,88 +5,66 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Palette neutre, boutons carrés */
+    /* Strictement noir & blanc */
     :root{
-      --bg: #f5f6f7;
-      --card: #ffffff;
-      --muted: #6b7280;
-      --text: #0f1724;
-      --border: #e6e9ec;
-      --shadow: 0 8px 24px rgba(15,23,36,0.06);
-      --success-bg: #eef2f1;
-      --success-dot: #334155;
-      --btn-face: #e0e0e0;
-      --btn-border-light: #ffffff;
-      --btn-border-dark: #808080;
-      --btn-pressed-light: #cfcfcf;
+      --white:#ffffff;
+      --black:#000000;
+      --shadow: none;
     }
 
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
-    .container{max-width:880px;margin:24px auto;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow)}
-    h1{font-size:18px;margin:0 0 8px}
-    label{display:block;font-weight:600;margin:12px 0 6px}
-    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text);box-sizing:border-box}
-    select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--border);font-size:14px;background:#fff;color:var(--text)}
+    html,body{height:100%;margin:0;background:var(--white);color:var(--black);font-family:Arial,Helvetica,sans-serif}
+    .container{max-width:880px;margin:24px auto;padding:16px;background:var(--white);border:1px solid var(--black);border-radius:6px;box-shadow:var(--shadow)}
+    h1{font-size:18px;margin:0 0 8px;color:var(--black)}
+    label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
+    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--white);color:var(--black);box-sizing:border-box}
+    select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--white);color:var(--black)}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
-    /* Boutons carrés, bords nets */
+
+    /* Boutons carrés noir/blanc */
     .btn{
       padding:8px 12px;
       border-radius:2px;
-      border:2px solid var(--btn-border-dark);
-      background: linear-gradient(#f1f1f1,#dedede);
-      color:#000;
-      font-weight:600;
+      border:2px solid var(--black);
+      background: var(--white);
+      color: var(--black);
+      font-weight:700;
       cursor:pointer;
-      box-shadow:
-        inset 1px 1px 0 var(--btn-border-light),
-        inset -1px -1px 0 rgba(0,0,0,0.12);
       display:inline-flex;
       align-items:center;
       gap:8px;
+      text-decoration:none;
     }
-    .btn:active{
-      background: linear-gradient(var(--btn-pressed-light),#d0d0d0);
-      box-shadow:
-        inset -1px -1px 0 var(--btn-border-dark),
-        inset 1px 1px 0 var(--btn-border-light);
-    }
-    .btn:disabled{
-      opacity:0.6;
-      cursor:not-allowed;
-      box-shadow:none;
-    }
-    .btn-primary{
-      background: linear-gradient(#dcdcdc,#cfcfcf);
-      border-color: #696969;
-      color:#000;
-    }
-    .btn-ghost{
-      background: linear-gradient(#f9f9f9,#f0f0f0);
-      border-color: #cfcfcf;
-      color: #222;
-      font-weight:600;
-    }
-    .btn-danger{
-      background: linear-gradient(#f1dede,#e6bcbc);
-      border-color:#b03030;
-      color:#2b0000;
-    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:disabled{ opacity:0.5; cursor:not-allowed; }
 
-    .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid #eef1f3;background:#fbfcfd}
-    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #f1f4f6}
+    /* Primary: fond noir, texte blanc */
+    .btn-primary{
+      background: var(--black);
+      color: var(--white);
+    }
+    /* Ghost: fond blanc, contour noir (default .btn) */
+    .btn-ghost{ background: var(--white); color: var(--black); }
+
+    /* Preview */
+    .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--white)}
+    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--black)}
     .kv:last-child{border-bottom:none}
-    .k{color:var(--muted)}
-    .v{font-weight:700}
-    .msg{color:#b91c1c;margin-top:8px}
-    .success { display:flex;align-items:center;gap:12px;background:var(--success-bg);border:1px solid #dbe7e3;padding:12px;border-radius:6px;margin-top:12px }
-    .success .dot{width:36px;height:36px;border-radius:2px;background:var(--success-dot);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
-    .success .text{font-weight:700;color:var(--text)}
+    .k{font-weight:700;color:var(--black)}
+    .v{font-weight:700;color:var(--black)}
+    .msg{color:var(--black);font-weight:700;margin-top:8px}
+    footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+
+    /* Success area in black & white */
+    .success { display:flex;align-items:center;gap:12px;border:1px solid var(--black);padding:12px;border-radius:6px;margin-top:12px;background:var(--white) }
+    .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--white);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
-    @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}}
+
+    @media(max-width:640px){.controls{flex-direction:column;align-items:stretch}footer{flex-direction:column-reverse}}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" role="main">
     <header>
       <h1>Parseur et Envoyeur vers GForm</h1>
     </header>
@@ -111,7 +89,7 @@
       </div>
     </div>
 
-    <!-- Controls aligned: Parser / Ouvrir lien prérempli / Soumettre -->
+    <!-- Controls aligned -->
     <div class="controls" style="margin-top:12px">
       <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
       <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
@@ -120,18 +98,18 @@
     </div>
 
     <!-- Preview -->
-    <div id="previewBox" class="preview" style="display:none">
+    <div id="previewBox" class="preview" style="display:none" aria-live="polite">
       <div style="font-weight:700;margin-bottom:8px">Aperçu des données extraites (normalisées)</div>
       <div id="kvlist"></div>
     </div>
 
-    <!-- Success area (hidden by default) -->
+    <!-- Success area -->
     <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
       <div class="dot">✓</div>
       <div class="text">Réponse envoyée — succès.</div>
       <div class="success-actions">
         <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
-        <button id="finishBtn" class="btn btn-danger">Non, terminer</button>
+        <button id="finishBtn" class="btn btn-ghost">Non, terminer</button>
       </div>
     </div>
   </div>
