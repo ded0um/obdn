@@ -1,1 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Coller Yapla → Google Form (auto-submit)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:18px}
+    textarea{width:100%;box-sizing:border-box}
+    button{margin-top:8px}
+    pre{background:#f7f7f7;border:1px solid #ddd;padding:8px;white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <h2>Coller Yapla → Soumettre Google Form</h2>
+  <p>Colle ici le texte copié depuis Yapla, clique "Parser" puis "Soumettre au Form".</p>
 
+  <textarea id="raw" rows="14" placeholder="Colle ici le texte copié depuis Yapla"></textarea><br/>
+  <button id="parseBtn">Parser</button>
+  <button id="submitBtn" disabled>Soumettre au Form</button>
+  <button id="prefillBtn" disabled>Ouvrir lien prérempli (vérifier)</button>
+  <h3>Aperçu des données extraites</h3>
+  <pre id="preview">{}</pre>
+
+<script>
+/* parseYapla : heuristique adaptée à tes exemples */
+function parseYapla(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const data = {};
+  // labels que l'on recherche (valeur généralement sur la ligne suivante)
+  const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
+  for (let i=0;i<lines.length;i++) {
+    const L = lines[i];
+    // exact label on its own line -> value is next non-empty line
+    for (const lab of labels) {
+      if (L.toLowerCase() === lab.toLowerCase()) {
+        // get next non-empty (already filtered)
+        const val = lines[i+1] || '';
+        if (val) {
+          const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
+          data[key] = val;
+        }
+      }
+    }
+    // inline email
+    const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if (email) data.courriel = email[0];
+    // phone
+    const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
+    if (phone && !/€/.test(L)) data.telephone = (data.telephone || phone[0]).replace(/\s+/g,'');
+    // montant
+    const montant = L.match(/(\d+[,.]\d{2}\s*€)/);
+    if (montant) data.montant = montant[1];
+    // code postal
+    const cp = L.match(/\b\d{5}\b/);
+    if (cp) data.code_postal = cp[0];
+  }
+  // fallback prénom/nom si première ligne contient un nom complet (cas possible)
+  if ((!data.prenom || !data.nom) && lines[0]) {
+    const first = lines[0].split(/\s+/);
+    if (first.length >= 2) {
+      if (!data.prenom) data.prenom = first[0];
+      if (!data.nom) data.nom = first.slice(1).join(' ');
+    }
+  }
+  return {
+    prenom: data.prenom || '',
+    nom: data.nom || '',
+    email: data.courriel || '',
+    telephone: data.telephone || '',
+    adresse: data.adresse || '',
+    ville: data.ville || '',
+    code_postal: data.code_postal || '',
+    pays: data.pays || '',
+    montant: data.montant || '',
+    date_creation: data.date_de_creation || data['date_officielle_du_don'] || ''
+  };
+}
+
+/* === CONFIG : rempli avec ton formulaire (ne pas modifier l'ID) === */
+const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
+
+/* Mapping déduit depuis ton lien prérempli */
+const mapping = {
+  prenom: 'entry.804774151',        // Cédric
+  nom: 'entry.1947114094',         // DUMONT
+  email: 'entry.81735574',         // cedricrl.dumont@gmail.com
+  adresse: 'entry.1914487624',     // 325 rue de Renoval
+  code_postal: 'entry.1544391775', // 80260
+  ville: 'entry.1912325143',       // Flesselles
+  pays: 'entry.1171780890',        // France
+  montant: 'entry.1174142672',     // 100 (ton prérempli)
+  date_creation: 'entry.163110140',// 2026-08-04
+  mode_paiement: 'entry.879040345' // Carte bancaire
+};
+/* ================================================================= */
+
+document.getElementById('parseBtn').addEventListener('click', () => {
+  const txt = document.getElementById('raw').value;
+  if (!txt.trim()) { alert('Colle d\'abord le texte Yapla.'); return; }
+  const parsed = parseYapla(txt);
+  window._parsed = parsed;
+  document.getElementById('preview').textContent = JSON.stringify(parsed, null, 2);
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('prefillBtn').disabled = false;
+});
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  if (!window._parsed) { alert('Parser d\'abord'); return; }
+  // Création d'un formulaire POST et soumission (ouvre dans nouvel onglet)
+  const f = document.createElement('form');
+  f.method = 'POST';
+  f.action = formAction;
+  f.target = '_blank';
+  f.style.display = 'none';
+  // ajouter tous les mappings connus
+  for (const key in mapping) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = mapping[key];
+    // valeur : si champ non présent, envoyer chaîne vide
+    input.value = window._parsed[key] || '';
+    f.appendChild(input);
+  }
+  document.body.appendChild(f);
+  f.submit();
+  setTimeout(()=>f.remove(), 1500);
+});
+
+document.getElementById('prefillBtn').addEventListener('click', () => {
+  if (!window._parsed) { alert('Parser d\'abord'); return; }
+  // Ouvre le lien prérempli (viewform with query string) pour vérification manuelle
+  const params = new URLSearchParams();
+  for (const key in mapping) {
+    params.set(mapping[key], window._parsed[key] || '');
+  }
+  // Construire URL viewform?entry.x=...
+  const viewBase = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/viewform';
+  const url = viewBase + '?usp=pp_url&' + params.toString();
+  window.open(url, '_blank');
+});
+</script>
+</body>
+</html>
