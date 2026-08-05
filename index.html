@@ -12,6 +12,7 @@
       --input-bg: #ffffff;     /* inputs / panneaux restent blancs pour contraste */
       --black: #000000;
       --max-w: 920px;
+      --yapla-orange: #f59e0b; /* orange pour bouton Yapla */
     }
 
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
@@ -61,6 +62,13 @@
     .btn-primary{ background: var(--black); color: var(--input-bg); }
     .btn-ghost{ background: var(--input-bg); color: var(--black); }
 
+    /* Yapla orange button */
+    .yapla-btn{
+      background: var(--yapla-orange);
+      color: #fff;
+      border-color: #b45309;
+    }
+
     /* Preview: white panel to keep readability inside the gray page */
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px}
@@ -88,7 +96,7 @@
         <div class="header-title">Parseur et Envoyeur vers GForm</div>
       </div>
       <div class="header-actions">
-        <a class="btn btn-ghost" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
+        <a class="btn yapla-btn" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
       </div>
     </div>
 
@@ -96,7 +104,7 @@
     <div class="body">
       <!-- Zone pour coller le texte -->
       <div>
-        <label for="raw">1) Colle le texte copié depuis Yapla</label>
+        <label for="raw">1) Coller le texte copié depuis Yapla</label>
         <textarea id="raw" placeholder=""></textarea>
       </div>
 
@@ -114,11 +122,9 @@
         </div>
       </div>
 
-      <!-- Contrôles alignés -->
+      <!-- Parser button above preview -->
       <div class="controls" style="margin-top:12px">
         <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
-        <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
-        <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
         <div id="validationMsg" class="msg" style="display:none"></div>
       </div>
 
@@ -129,6 +135,12 @@
         <div style="height:8px"></div>
         <div class="section-title">----DONATEUR----</div>
         <div id="donateurFields"></div>
+
+        <!-- Buttons below preview as requested -->
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
+          <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
+        </div>
       </div>
 
       <!-- Succès -->
