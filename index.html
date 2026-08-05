@@ -24,8 +24,14 @@
       background:var(--header-bg);
       padding:16px 18px;
       border-bottom:1px solid var(--black);
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content:space-between;
+      flex-wrap:wrap;
     }
-    .header-title{font-size:18px;margin:0 0 8px;font-weight:900;color:var(--black)}
+    .header-left{display:flex;flex-direction:column;gap:6px}
+    .header-title{font-size:18px;margin:0;font-weight:900;color:var(--black)}
     /* Body content */
     .body{padding:16px;background:transparent} /* keep body transparent so container grey shows */
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
@@ -65,6 +71,9 @@
     .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
 
+    .header-actions { display:flex; gap:8px; align-items:center; }
+    .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
+
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
@@ -74,9 +83,14 @@
 <body>
   <div class="outer">
     <div class="container" role="main">
-      <!-- Grey banner with title only (instruction lines removed as requested) -->
+      <!-- Grey banner with title and Yapla link -->
       <div class="header-banner" aria-hidden="false">
-        <div class="header-title">Parseur et Envoyeur vers GForm</div>
+        <div class="header-left">
+          <div class="header-title">Parseur et Envoyeur vers GForm</div>
+        </div>
+        <div class="header-actions">
+          <a class="btn btn-ghost" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
+        </div>
       </div>
 
       <!-- Main body (inputs white for contrast) -->
