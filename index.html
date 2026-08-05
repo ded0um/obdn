@@ -5,21 +5,28 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Noir & blanc, page background gris foncé léger, contenu direct (pas de container) */
+    /* Palette noir/blanc + gris d'arrière-plan, pas de container bordé */
     :root{
-      --page-bg: #e6e6e6;      /* page background: gris */
-      --header-bg: #d9d9d9;    /* bandeau en gris un peu plus clair */
-      --input-bg: #ffffff;     /* inputs / panneaux restent blancs pour contraste */
+      --page-bg: #e6e6e6;
+      --header-bg: #d9d9d9;
+      --input-bg: #ffffff;
       --black: #000000;
       --max-w: 920px;
-      --yapla-orange: #f59e0b; /* orange pour bouton Yapla */
+      --yapla-orange: #f59e0b;
     }
 
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    /* Center content but no bordered container */
-    .centered { max-width: var(--max-w); margin:28px auto; padding:0 12px; box-sizing:border-box; }
+    /* Center content but no bordered container
+       Ensure same spacing top and bottom: margin-top and margin-bottom equal,
+       and add bottom padding so content doesn't touch page bottom on short pages.
+    */
+    .centered { 
+      max-width: var(--max-w); 
+      margin:28px auto;           /* top & bottom margin = 28px */
+      padding:0 12px 28px 12px;   /* bottom padding matches top margin */
+      box-sizing:border-box; 
+    }
 
-    /* Header banner (gris) - pleine largeur du bloc centré */
     .header-banner{
       background:var(--header-bg);
       padding:16px 18px;
@@ -36,14 +43,12 @@
     .header-actions { display:flex; gap:8px; align-items:center; }
     .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
 
-    /* Body content - directly below header */
     .body{padding:16px 0 0 0;background:transparent}
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
     textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black)}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 
-    /* Buttons: carré noir/blanc */
     .btn{
       padding:8px 12px;
       border-radius:2px;
@@ -62,14 +67,12 @@
     .btn-primary{ background: var(--black); color: var(--input-bg); }
     .btn-ghost{ background: var(--input-bg); color: var(--black); }
 
-    /* Yapla orange button */
     .yapla-btn{
       background: var(--yapla-orange);
       color: #fff;
       border-color: #b45309;
     }
 
-    /* Preview: white panel to keep readability inside the gray page */
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px}
     .field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--black)}
@@ -82,15 +85,18 @@
     .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
 
+    .preview-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
+      .preview-actions{justify-content:flex-start}
     }
   </style>
 </head>
 <body>
   <div class="centered">
-    <!-- Bandeau gris en haut -->
+    <!-- header banner -->
     <div class="header-banner" aria-hidden="false">
       <div class="header-left">
         <div class="header-title">Parseur et Envoyeur vers GForm</div>
@@ -100,15 +106,15 @@
       </div>
     </div>
 
-    <!-- Contenu directement sous le bandeau -->
+    <!-- body -->
     <div class="body">
-      <!-- Zone pour coller le texte -->
+      <!-- input paste -->
       <div>
         <label for="raw">1) Coller le texte copié depuis Yapla</label>
         <textarea id="raw" placeholder=""></textarea>
       </div>
 
-      <!-- Mode de versement -->
+      <!-- mode -->
       <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <div style="min-width:220px">
           <label for="modeSelect">2) Mode de versement (obligatoire)</label>
@@ -122,28 +128,30 @@
         </div>
       </div>
 
-      <!-- Parser button above preview -->
+      <!-- parser control -->
       <div class="controls" style="margin-top:12px">
         <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
         <div id="validationMsg" class="msg" style="display:none"></div>
       </div>
 
-      <!-- Aperçu -->
+      <!-- preview -->
       <div id="previewBox" class="preview" style="display:none" aria-live="polite">
         <div class="section-title">----DON----</div>
         <div id="donFields"></div>
+
         <div style="height:8px"></div>
+
         <div class="section-title">----DONATEUR----</div>
         <div id="donateurFields"></div>
-
-        <!-- Buttons below preview as requested -->
-        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-          <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
-          <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
-        </div>
       </div>
 
-      <!-- Succès -->
+      <!-- buttons under preview (outside the preview box) -->
+      <div id="previewActions" class="preview-actions" style="display:none;">
+        <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
+        <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
+      </div>
+
+      <!-- success -->
       <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
         <div class="dot">✓</div>
         <div class="text">Réponse envoyée — succès.</div>
@@ -156,7 +164,7 @@
   </div>
 
 <script>
-/* === Configuration (ne pas modifier l'ID du formulaire) === */
+/* Configuration */
 const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
 const mapping = {
   prenom: 'entry.804774151',
@@ -170,7 +178,6 @@ const mapping = {
   date_creation: 'entry.163110140',
   mode_paiement: 'entry.879040345'
 };
-/* ====================================================== */
 
 const rawEl = document.getElementById('raw');
 const modeEl = document.getElementById('modeSelect');
@@ -179,6 +186,7 @@ const prefillBtn = document.getElementById('prefillBtn');
 const submitBtn = document.getElementById('submitBtn');
 const validationMsg = document.getElementById('validationMsg');
 const previewBox = document.getElementById('previewBox');
+const previewActions = document.getElementById('previewActions');
 const donFields = document.getElementById('donFields');
 const donateurFields = document.getElementById('donateurFields');
 
@@ -189,7 +197,7 @@ const finishBtn = document.getElementById('finishBtn');
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
 
-/* Normalisation montant */
+/* Utilities */
 function normalizeAmount(raw){
   if(!raw) return '';
   let s = String(raw).replace(/\u00A0/g,' ').trim();
@@ -200,8 +208,6 @@ function normalizeAmount(raw){
   if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
   return s;
 }
-
-/* Normalisation date to YYYY-MM-DD */
 function parseDateToYYYYMMDD(raw){
   if(!raw) return '';
   raw = String(raw).trim();
@@ -211,8 +217,6 @@ function parseDateToYYYYMMDD(raw){
   if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
   return '';
 }
-
-/* Convert ISO YYYY-MM-DD -> DD/MM/YYYY for preview */
 function isoToDDMMYYYY(iso){
   if(!iso) return '';
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -220,7 +224,7 @@ function isoToDDMMYYYY(iso){
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-/* Parse Yapla: returns normalized fields */
+/* Parsing */
 function parseYapla(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
@@ -254,7 +258,7 @@ function parseYapla(text){
   }
   const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
   const date_iso = parseDateToYYYYMMDD(date_raw) || '';
-  const date_display = isoToDDMMYYYY(date_iso); // '' if none
+  const date_display = isoToDDMMYYYY(date_iso);
   return {
     prenom: data.prenom || '',
     nom: data.nom || '',
@@ -264,8 +268,8 @@ function parseYapla(text){
     code_postal: data.code_postal || '',
     pays: data.pays || '',
     montant: normalizeAmount(data.montant || ''),
-    date_iso: date_iso,         // sent (YYYY-MM-DD)
-    date_display: date_display  // shown (DD/MM/YYYY)
+    date_iso: date_iso,
+    date_display: date_display
   };
 }
 
@@ -274,7 +278,6 @@ function renderPreview(parsed, modeValue){
   donFields.innerHTML = '';
   donateurFields.innerHTML = '';
 
-  // DON section: MONTANT, DATE, MODE DE VERSEMENT
   const donEntries = [
     ['MONTANT', parsed.montant || ''],
     ['DATE', parsed.date_display || ''],
@@ -287,12 +290,11 @@ function renderPreview(parsed, modeValue){
     donFields.appendChild(row);
   }
 
-  // small separation
+  // small spacer
   const spacer = document.createElement('div');
   spacer.style.height = '6px';
   donFields.appendChild(spacer);
 
-  // DONATEUR section: NOM, PRENOM, ADRESSE, CODE POSTAL, VILLE, PAYS, ADRESSE MAIL
   const donorEntries = [
     ['NOM', parsed.nom || ''],
     ['PRENOM', parsed.prenom || ''],
@@ -330,6 +332,7 @@ parseBtn.addEventListener('click', () => {
   lastParsed = parsed;
   renderPreview(parsed, modeEl.value);
   previewBox.style.display = 'block';
+  previewActions.style.display = 'flex';
   prefillBtn.disabled = false;
   submitBtn.disabled = false;
   clearMsg();
@@ -346,7 +349,7 @@ function buildPrefillURL(parsed){
   if(parsed.ville) params.set(mapping.ville, parsed.ville);
   if(parsed.pays) params.set(mapping.pays, parsed.pays);
   if(parsed.montant) params.set(mapping.montant, parsed.montant);
-  if(parsed.date_iso) params.set(mapping.date_creation, parsed.date_iso); // YYYY-MM-DD
+  if(parsed.date_iso) params.set(mapping.date_creation, parsed.date_iso);
   if(modeEl.value) params.set(mapping.mode_paiement, modeEl.value);
   const viewBase = formAction.replace('/formResponse','/viewform');
   return viewBase + '?usp=pp_url&' + params.toString();
@@ -365,14 +368,12 @@ submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
 
-  // Disable UI to avoid double clicks
   submitBtn.disabled = true;
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
   rawEl.disabled = true;
   modeEl.disabled = true;
 
-  // Build and submit in new tab so current page remains and we can show success
   const f = document.createElement('form');
   f.method = 'POST';
   f.action = formAction;
@@ -398,17 +399,16 @@ submitBtn.addEventListener('click', () => {
   document.body.appendChild(f);
   f.submit();
 
-  // Show local success indicator and options
   successBox.style.display = 'flex';
 });
 
 /* After success: user chooses whether they have another to do */
 anotherBtn.addEventListener('click', () => {
-  // reset UI to allow a new entry
   rawEl.value = '';
   modeEl.value = '';
   lastParsed = null;
   previewBox.style.display = 'none';
+  previewActions.style.display = 'none';
   donFields.innerHTML = '';
   donateurFields.innerHTML = '';
   successBox.style.display = 'none';
@@ -422,7 +422,6 @@ anotherBtn.addEventListener('click', () => {
 });
 
 finishBtn.addEventListener('click', () => {
-  // finalise: disable everything and update message
   successBox.querySelector('.text').textContent = 'Terminé — tu peux fermer cet onglet.';
   anotherBtn.disabled = true;
   finishBtn.disabled = true;
