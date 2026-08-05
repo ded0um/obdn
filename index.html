@@ -5,41 +5,44 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Noir & blanc with container background set to grey */
+    /* Noir & blanc, page background gris foncé léger, contenu direct (pas de container) */
     :root{
-      --page-bg: #ffffff;      /* page background: white */
-      --container-bg: #e6e6e6; /* container background: grey as requested */
-      --input-bg: #ffffff;     /* inputs remain white for contrast */
-      --header-bg: #d9d9d9;    /* subtle grey banner behind header/instructions */
+      --page-bg: #e6e6e6;      /* page background: gris */
+      --header-bg: #d9d9d9;    /* bandeau en gris un peu plus clair */
+      --input-bg: #ffffff;     /* inputs / panneaux restent blancs pour contraste */
       --black: #000000;
-      --shadow: none;
+      --max-w: 920px;
     }
 
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    .outer{max-width:920px;margin:28px auto;padding:0}
-    /* Container now grey */
-    .container{background:var(--container-bg);border:1px solid var(--black);border-radius:6px;box-shadow:var(--shadow);padding:0;overflow:hidden}
-    /* Header banner (slightly darker grey) */
+    /* Center content but no bordered container */
+    .centered { max-width: var(--max-w); margin:28px auto; padding:0 12px; box-sizing:border-box; }
+
+    /* Header banner (gris) - pleine largeur du bloc centré */
     .header-banner{
       background:var(--header-bg);
       padding:16px 18px;
-      border-bottom:1px solid var(--black);
       display:flex;
       align-items:center;
       gap:12px;
       justify-content:space-between;
       flex-wrap:wrap;
+      border-radius:6px;
+      box-sizing:border-box;
     }
     .header-left{display:flex;flex-direction:column;gap:6px}
     .header-title{font-size:18px;margin:0;font-weight:900;color:var(--black)}
-    /* Body content */
-    .body{padding:16px;background:transparent} /* keep body transparent so container grey shows */
+    .header-actions { display:flex; gap:8px; align-items:center; }
+    .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
+
+    /* Body content - directly below header */
+    .body{padding:16px 0 0 0;background:transparent}
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
     textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black)}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 
-    /* Buttons: square black/white */
+    /* Buttons: carré noir/blanc */
     .btn{
       padding:8px 12px;
       border-radius:2px;
@@ -58,7 +61,7 @@
     .btn-primary{ background: var(--black); color: var(--input-bg); }
     .btn-ghost{ background: var(--input-bg); color: var(--black); }
 
-    /* Preview: keep white panel inside grey container for readability */
+    /* Preview: white panel to keep readability inside the gray page */
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px}
     .field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--black)}
@@ -71,9 +74,6 @@
     .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
 
-    .header-actions { display:flex; gap:8px; align-items:center; }
-    .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
-
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
@@ -81,65 +81,63 @@
   </style>
 </head>
 <body>
-  <div class="outer">
-    <div class="container" role="main">
-      <!-- Grey banner with title and Yapla link -->
-      <div class="header-banner" aria-hidden="false">
-        <div class="header-left">
-          <div class="header-title">Parseur et Envoyeur vers GForm</div>
-        </div>
-        <div class="header-actions">
-          <a class="btn btn-ghost" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
+  <div class="centered">
+    <!-- Bandeau gris en haut -->
+    <div class="header-banner" aria-hidden="false">
+      <div class="header-left">
+        <div class="header-title">Parseur et Envoyeur vers GForm</div>
+      </div>
+      <div class="header-actions">
+        <a class="btn btn-ghost" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
+      </div>
+    </div>
+
+    <!-- Contenu directement sous le bandeau -->
+    <div class="body">
+      <!-- Zone pour coller le texte -->
+      <div>
+        <label for="raw">1) Colle le texte copié depuis Yapla</label>
+        <textarea id="raw" placeholder=""></textarea>
+      </div>
+
+      <!-- Mode de versement -->
+      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="min-width:220px">
+          <label for="modeSelect">2) Mode de versement (obligatoire)</label>
+          <select id="modeSelect" aria-label="Mode de versement">
+            <option value="">— choisir —</option>
+            <option>Carte bancaire</option>
+            <option>Virement bancaire</option>
+            <option>Chèque bancaire</option>
+            <option>Espèce</option>
+          </select>
         </div>
       </div>
 
-      <!-- Main body (inputs white for contrast) -->
-      <div class="body">
-        <!-- 1) Zone pour coller le texte -->
-        <div>
-          <label for="raw">1) Colle le texte copié depuis Yapla</label>
-          <textarea id="raw" placeholder=""></textarea>
-        </div>
+      <!-- Contrôles alignés -->
+      <div class="controls" style="margin-top:12px">
+        <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
+        <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
+        <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
+        <div id="validationMsg" class="msg" style="display:none"></div>
+      </div>
 
-        <!-- 2) Mode de versement -->
-        <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <div style="min-width:220px">
-            <label for="modeSelect">2) Mode de versement (obligatoire)</label>
-            <select id="modeSelect" aria-label="Mode de versement">
-              <option value="">— choisir —</option>
-              <option>Carte bancaire</option>
-              <option>Virement bancaire</option>
-              <option>Chèque bancaire</option>
-              <option>Espèce</option>
-            </select>
-          </div>
-        </div>
+      <!-- Aperçu -->
+      <div id="previewBox" class="preview" style="display:none" aria-live="polite">
+        <div class="section-title">----DON----</div>
+        <div id="donFields"></div>
+        <div style="height:8px"></div>
+        <div class="section-title">----DONATEUR----</div>
+        <div id="donateurFields"></div>
+      </div>
 
-        <!-- Controls aligned -->
-        <div class="controls" style="margin-top:12px">
-          <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
-          <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (vérifier)</button>
-          <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au Form</button>
-          <div id="validationMsg" class="msg" style="display:none"></div>
-        </div>
-
-        <!-- Preview -->
-        <div id="previewBox" class="preview" style="display:none" aria-live="polite">
-          <div class="section-title">----DON----</div>
-          <div id="donFields"></div>
-          <div style="height:8px"></div>
-          <div class="section-title">----DONATEUR----</div>
-          <div id="donateurFields"></div>
-        </div>
-
-        <!-- Success area -->
-        <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
-          <div class="dot">✓</div>
-          <div class="text">Réponse envoyée — succès.</div>
-          <div class="success-actions">
-            <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
-            <button id="finishBtn" class="btn btn-ghost">Non, terminer</button>
-          </div>
+      <!-- Succès -->
+      <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
+        <div class="dot">✓</div>
+        <div class="text">Réponse envoyée — succès.</div>
+        <div class="success-actions">
+          <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
+          <button id="finishBtn" class="btn btn-ghost">Non, terminer</button>
         </div>
       </div>
     </div>
