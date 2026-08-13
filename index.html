@@ -16,14 +16,10 @@
     }
 
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    /* Center content but no bordered container
-       Ensure same spacing top and bottom: margin-top and margin-bottom equal,
-       and add bottom padding so content doesn't touch page bottom on short pages.
-    */
     .centered { 
       max-width: var(--max-w); 
-      margin:28px auto;           /* top & bottom margin = 28px */
-      padding:0 12px 28px 12px;   /* bottom padding matches top margin */
+      margin:28px auto;           
+      padding:0 12px 28px 12px;   
       box-sizing:border-box; 
     }
 
@@ -290,7 +286,6 @@ function renderPreview(parsed, modeValue){
     donFields.appendChild(row);
   }
 
-  // small spacer
   const spacer = document.createElement('div');
   spacer.style.height = '6px';
   donFields.appendChild(spacer);
@@ -338,7 +333,7 @@ parseBtn.addEventListener('click', () => {
   clearMsg();
 });
 
-/* Build prefill URL (uses date_iso for sending) */
+/* Build prefill URL */
 function buildPrefillURL(parsed){
   const params = new URLSearchParams();
   if(parsed.prenom) params.set(mapping.prenom, parsed.prenom);
@@ -363,7 +358,7 @@ prefillBtn.addEventListener('click', () => {
   window.open(url, '_blank');
 });
 
-/* Submit : envoie et ferme l'onglet automatiquement après 1.5 seconde */
+/* Submit : Ouvre le lien pré-rempli officiel */
 submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
@@ -374,38 +369,13 @@ submitBtn.addEventListener('click', () => {
   rawEl.disabled = true;
   modeEl.disabled = true;
 
-  const prefillUrl = buildPrefillURL(lastParsed);
-  const submitUrl = prefillUrl.replace('/viewform', '/formResponse');
-
-  const f = document.createElement('form');
-  f.method = 'POST';
-  f.action = submitUrl;
-  
-  // Nom unique pour l'onglet invisible
-  const uniqueWindowName = 'gform_submit_' + Date.now();
-  f.target = uniqueWindowName;
-  f.style.display = 'none';
-
-  document.body.appendChild(f);
-  
-  // Ouvre l'onglet invisible
-  const win = window.open('', uniqueWindowName);
-  
-  f.submit();
-
-  // Ferme l'onglet automatiquement au bout de 1.5 seconde (le temps que Google enregistre la réponse)
-  setTimeout(() => {
-    try {
-      if (win && !win.closed) {
-        win.close();
-      }
-    } catch(e) {}
-  }, 1500);
+  const url = buildPrefillURL(lastParsed);
+  window.open(url, '_blank');
 
   successBox.style.display = 'flex';
 });
 
-/* After success: user chooses whether they have another to do */
+/* After success */
 anotherBtn.addEventListener('click', () => {
   rawEl.value = '';
   modeEl.value = '';
