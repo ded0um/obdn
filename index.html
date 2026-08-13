@@ -135,10 +135,10 @@
       <!-- success -->
       <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
         <div class="dot">✓</div>
-        <div class="text">Réponse envoyée — succès.</div>
+        <div class="text">As tu un autre don a parser ?</div>
         <div class="success-actions">
-          <button id="anotherBtn" class="btn btn-ghost">Oui, j'en ai un autre</button>
-          <button id="finishBtn" class="btn btn-ghost">Non, terminer</button>
+          <button id="anotherBtn" class="btn btn-ghost">Oui</button>
+          <button id="finishBtn" class="btn btn-ghost">Fermer l'onglet</button>
         </div>
       </div>
     </div>
@@ -409,9 +409,13 @@ anotherBtn.addEventListener('click', () => {
 });
 
 finishBtn.addEventListener('click', () => {
-  successBox.querySelector('.text').textContent = 'Terminé — tu peux fermer cet onglet.';
-  anotherBtn.disabled = true;
-  finishBtn.disabled = true;
+  window.close();
+  // Sécurité au cas où le navigateur bloque window.close() s'il n'a pas ouvert l'onglet lui-même
+  setTimeout(() => {
+    successBox.querySelector('.text').textContent = 'Tu peux fermer cet onglet manuellement.';
+    anotherBtn.style.display = 'none';
+    finishBtn.style.display = 'none';
+  }, 300);
 });
 </script>
 </body>
