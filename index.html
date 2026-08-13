@@ -387,6 +387,8 @@ submitBtn.addEventListener('click', () => {
 function showSuccess() {
   if(isSubmitted) {
     successBox.style.display = 'flex';
+    // Scroll automatique vers le bas en douceur
+    successBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 }
 
@@ -405,12 +407,12 @@ anotherBtn.addEventListener('click', () => {
   parseBtn.disabled = false;
   rawEl.disabled = false;
   clearMsg();
+  window.scrollTo({ top: 0, behavior: 'smooth' }); // Remonte en haut pour le nouveau don
   rawEl.focus();
 });
 
 finishBtn.addEventListener('click', () => {
   window.close();
-  // Sécurité au cas où le navigateur bloque window.close() s'il n'a pas ouvert l'onglet lui-même
   setTimeout(() => {
     successBox.querySelector('.text').textContent = 'Tu peux fermer cet onglet manuellement.';
     anotherBtn.style.display = 'none';
