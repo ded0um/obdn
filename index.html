@@ -159,6 +159,23 @@
     </div>
   </div>
 
+  <!-- Iframe cachée pour intercepter la réponse de Google Forms sans ouvrir d'onglet -->
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(isSubmitted){ showSuccess(); }"></iframe>
+
+  <!-- Formulaire invisible pour soumettre via l'iframe -->
+  <form id="gform" action="https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse" method="POST" target="hidden_iframe" style="display:none;">
+    <input type="hidden" name="entry.804774151" id="f_prenom">
+    <input type="hidden" name="entry.1947114094" id="f_nom">
+    <input type="hidden" name="entry.81735574" id="f_email">
+    <input type="hidden" name="entry.1914487624" id="f_adresse">
+    <input type="hidden" name="entry.1544391775" id="f_cp">
+    <input type="hidden" name="entry.1912325143" id="f_ville">
+    <input type="hidden" name="entry.1171780890" id="f_pays">
+    <input type="hidden" name="entry.1174142672" id="f_montant">
+    <input type="hidden" name="entry.163110140" id="f_date">
+    <input type="hidden" name="entry.879040345" id="f_mode">
+  </form>
+
 <script>
 /* Configuration */
 const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
@@ -189,6 +206,8 @@ const donateurFields = document.getElementById('donateurFields');
 const successBox = document.getElementById('successBox');
 const anotherBtn = document.getElementById('anotherBtn');
 const finishBtn = document.getElementById('finishBtn');
+
+let isSubmitted = false;
 
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
@@ -358,7 +377,7 @@ prefillBtn.addEventListener('click', () => {
   window.open(url, '_blank');
 });
 
-/* Submit : Envoi propre et transparent en arrière-plan grâce à mode: 'no-cors' */
+/* Submit : Soumission transparente et invisible via iframe cachée */
 submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
@@ -369,35 +388,33 @@ submitBtn.addEventListener('click', () => {
   rawEl.disabled = true;
   modeEl.disabled = true;
 
-  const formData = new URLSearchParams();
-  formData.append(mapping.prenom, lastParsed.prenom || '');
-  formData.append(mapping.nom, lastParsed.nom || '');
-  formData.append(mapping.email, lastParsed.email || '');
-  formData.append(mapping.adresse, lastParsed.adresse || '');
-  formData.append(mapping.code_postal, lastParsed.code_postal || '');
-  formData.append(mapping.ville, lastParsed.ville || '');
-  formData.append(mapping.pays, lastParsed.pays || '');
-  formData.append(mapping.montant, lastParsed.montant || '');
-  formData.append(mapping.date_creation, lastParsed.date_iso || '');
-  formData.append(mapping.mode_paiement, modeEl.value || '');
+  document.getElementById('f_prenom').value = lastParsed.prenom || '';
+  document.getElementById('f_nom').value = lastParsed.nom || '';
+  document.getElementById('f_email').value = lastParsed.email || '';
+  document.getElementById('f_adresse').value = lastParsed.adresse || '';
+  document.getElementById('f_cp').value = lastParsed.code_postal || '';
+  document.getElementById('f_ville').value = lastParsed.ville || '';
+  document.getElementById('f_pays').value = lastParsed.pays || '';
+  document.getElementById('f_montant').value = lastParsed.montant || '';
+  document.getElementById('f_date').value = lastParsed.date_iso || '';
+  document.getElementById('f_mode').value = modeEl.value || '';
 
-  fetch(formAction, {
-    method: 'POST',
-    mode: 'no-cors',
-    body: formData
-  }).then(() => {
-    successBox.style.display = 'flex';
-  }).catch(() => {
-    // Même en cas de blocage réseau mineur, Google reçoit l'information sur une seule page
-    successBox.style.display = 'flex';
-  });
+  isSubmitted = true;
+  document.getElementById('gform').submit();
 });
+
+function showSuccess() {
+  if(isSubmitted) {
+    successBox.style.display = 'flex';
+  }
+}
 
 /* After success */
 anotherBtn.addEventListener('click', () => {
   rawEl.value = '';
   modeEl.value = '';
   lastParsed = null;
+  isSubmitted = false;
   previewBox.style.display = 'none';
   previewActions.style.display = 'none';
   donFields.innerHTML = '';
