@@ -42,7 +42,6 @@
     .body{padding:16px 0 0 0;background:transparent}
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
     textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
-    select,input{padding:8px 10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black)}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 
     .btn{
@@ -110,20 +109,6 @@
         <textarea id="raw" placeholder=""></textarea>
       </div>
 
-      <!-- mode -->
-      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <div style="min-width:220px">
-          <label for="modeSelect">2) Mode de versement (obligatoire)</label>
-          <select id="modeSelect" aria-label="Mode de versement">
-            <option value="">— choisir —</option>
-            <option>Carte bancaire</option>
-            <option>Virement bancaire</option>
-            <option>Chèque bancaire</option>
-            <option>Espèce</option>
-          </select>
-        </div>
-      </div>
-
       <!-- parser control -->
       <div class="controls" style="margin-top:12px">
         <button id="parseBtn" class="btn btn-ghost" title="Analyser le texte collé">Parser</button>
@@ -173,7 +158,7 @@
     <input type="hidden" name="entry.1171780890" id="f_pays">
     <input type="hidden" name="entry.1174142672" id="f_montant">
     <input type="hidden" name="entry.163110140" id="f_date">
-    <input type="hidden" name="entry.879040345" id="f_mode">
+    <input type="hidden" name="entry.879040345" id="f_mode" value="Carte bancaire">
   </form>
 
 <script>
@@ -193,7 +178,6 @@ const mapping = {
 };
 
 const rawEl = document.getElementById('raw');
-const modeEl = document.getElementById('modeSelect');
 const parseBtn = document.getElementById('parseBtn');
 const prefillBtn = document.getElementById('prefillBtn');
 const submitBtn = document.getElementById('submitBtn');
@@ -289,14 +273,14 @@ function parseYapla(text){
 }
 
 /* Render preview in requested order */
-function renderPreview(parsed, modeValue){
+function renderPreview(parsed){
   donFields.innerHTML = '';
   donateurFields.innerHTML = '';
 
   const donEntries = [
     ['MONTANT', parsed.montant || ''],
     ['DATE', parsed.date_display || ''],
-    ['MODE DE VERSEMENT', modeValue || '']
+    ['MODE DE VERSEMENT', 'Carte bancaire']
   ];
   for(const [label, value] of donEntries){
     const row = document.createElement('div');
@@ -329,9 +313,7 @@ function renderPreview(parsed, modeValue){
 /* Validation */
 function canParse(){
   const raw = rawEl.value.trim();
-  const mode = modeEl.value.trim();
   if(!raw){ showMsg("Veuillez coller d'abord le texte Yapla."); return false; }
-  if(!mode){ showMsg("Veuillez choisir le mode de versement avant de parser."); return false; }
   clearMsg(); return true;
 }
 
@@ -344,7 +326,7 @@ parseBtn.addEventListener('click', () => {
   const txt = rawEl.value;
   const parsed = parseYapla(txt);
   lastParsed = parsed;
-  renderPreview(parsed, modeEl.value);
+  renderPreview(parsed);
   previewBox.style.display = 'block';
   previewActions.style.display = 'flex';
   prefillBtn.disabled = false;
@@ -364,7 +346,7 @@ function buildPrefillURL(parsed){
   if(parsed.pays) params.set(mapping.pays, parsed.pays);
   if(parsed.montant) params.set(mapping.montant, parsed.montant);
   if(parsed.date_iso) params.set(mapping.date_creation, parsed.date_iso);
-  if(modeEl.value) params.set(mapping.mode_paiement, modeEl.value);
+  params.set(mapping.mode_paiement, 'Carte bancaire');
   const viewBase = formAction.replace('/formResponse','/viewform');
   return viewBase + '?usp=pp_url&' + params.toString();
 }
@@ -386,7 +368,6 @@ submitBtn.addEventListener('click', () => {
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
   rawEl.disabled = true;
-  modeEl.disabled = true;
 
   document.getElementById('f_prenom').value = lastParsed.prenom || '';
   document.getElementById('f_nom').value = lastParsed.nom || '';
@@ -397,7 +378,7 @@ submitBtn.addEventListener('click', () => {
   document.getElementById('f_pays').value = lastParsed.pays || '';
   document.getElementById('f_montant').value = lastParsed.montant || '';
   document.getElementById('f_date').value = lastParsed.date_iso || '';
-  document.getElementById('f_mode').value = modeEl.value || '';
+  document.getElementById('f_mode').value = 'Carte bancaire';
 
   isSubmitted = true;
   document.getElementById('gform').submit();
@@ -412,7 +393,6 @@ function showSuccess() {
 /* After success */
 anotherBtn.addEventListener('click', () => {
   rawEl.value = '';
-  modeEl.value = '';
   lastParsed = null;
   isSubmitted = false;
   previewBox.style.display = 'none';
@@ -424,7 +404,6 @@ anotherBtn.addEventListener('click', () => {
   prefillBtn.disabled = true;
   parseBtn.disabled = false;
   rawEl.disabled = false;
-  modeEl.disabled = false;
   clearMsg();
   rawEl.focus();
 });
