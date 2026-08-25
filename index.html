@@ -274,14 +274,31 @@ function isoToDDMMYYYY(iso){
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-/* Chargement des donateurs depuis le Google Sheet (triés par ordre alphabétique) */
+/* Chargement des donateurs depuis le Google Sheet (triés et filtrés) */
 async function loadDonorsFromSheet() {
   try {
     const response = await fetch(SCRIPT_URL + '?action=donors');
     const donors = await response.json();
     
+    // Filtrage pour écarter les en-têtes, "TEST" et "Nom pour autocrat"
+    const filteredDonors = donors.filter(d => {
+      const nom = (d.nom || '').trim();
+      const prenom = (d.prenom || '').trim();
+      
+      if (!nom) return false;
+      
+      const nomUpper = nom.toUpperCase();
+      const prenomUpper = prenom.toUpperCase();
+      
+      // Exclusions
+      if (nomUpper === 'TEST' || nomUpper.includes('NOM POUR AUTOCRAT')) return false;
+      if (nomUpper === 'NOM' && prenomUpper === 'PRENOM') return false;
+      
+      return true;
+    });
+
     // Tri alphabétique sur le Nom (puis le Prénom)
-    donors.sort((a, b) => {
+    filteredDonors.sort((a, b) => {
       const nomA = (a.nom || '').trim().toUpperCase();
       const nomB = (b.nom || '').trim().toUpperCase();
       if (nomA !== nomB) return nomA.localeCompare(nomB);
@@ -289,13 +306,12 @@ async function loadDonorsFromSheet() {
       const preB = (b.prenom || '').trim().toUpperCase();
       return preA.localeCompare(preB);
     });
-
+    
     donorSelect.innerHTML = '<option value="">-- Sélectionnez un donateur --</option>';
-    donors.forEach(d => {
+    filteredDonors.forEach(d => {
       const key = `${d.nom} ${d.prenom}`.trim().toUpperCase();
       const opt = document.createElement('option');
       opt.value = key;
-      // Nom Prénom en haut, email en dessous (représenté clairement sur une ligne de texte)
       const emailText = d.email ? d.email : 'Pas d\'email';
       opt.textContent = `${d.nom} ${d.prenom} — ${emailText}`;
       donorSelect.appendChild(opt);
