@@ -18,7 +18,7 @@
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
     .centered { 
       max-width: var(--max-w); 
-      margin:28px auto;            
+      margin:28px auto;         
       padding:0 12px 28px 12px;   
       box-sizing:border-box; 
     }
@@ -163,8 +163,11 @@
         </div>
         <div class="controls" style="margin-top:12px;">
           <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif annuel</button>
+          <!-- BOUTON AJOUTÉ POUR LE PDF -->
+          <button id="generatePdfBtn" class="btn btn-yapla" style="background:var(--black); color:var(--input-bg);">Générer le reçu fiscal (PDF)</button>
         </div>
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
+        <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
       </div>
 
     </div>
@@ -224,6 +227,10 @@ const donorSelect = document.getElementById('donorSelect');
 const annualYear = document.getElementById('annualYear');
 const generateAnnualBtn = document.getElementById('generateAnnualBtn');
 const annualOutput = document.getElementById('annualOutput');
+
+// Éléments PDF ajoutés
+const generatePdfBtn = document.getElementById('generatePdfBtn');
+const pdfOutput = document.getElementById('pdfOutput');
 
 let isSubmitted = false;
 
@@ -503,6 +510,34 @@ generateAnnualBtn.addEventListener('click', async () => {
     `;
   } catch(e) {
     annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Erreur lors de la récupération des données.</div>`;
+  }
+});
+
+/* Déclenchement de la génération du PDF via Google Apps Script */
+generatePdfBtn.addEventListener('click', async () => {
+  const selectedKey = donorSelect.value;
+  const year = annualYear.value;
+
+  if(!selectedKey) {
+    alert('Veuillez sélectionner un donateur.');
+    return;
+  }
+
+  pdfOutput.style.display = 'block';
+  pdfOutput.innerHTML = `<div style="padding:8px;">Génération du reçu fiscal PDF en cours...</div>`;
+
+  try {
+    const url = `${SCRIPT_URL}?action=generate_pdf&donor=${encodeURIComponent(selectedKey)}&year=${year}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if(data.status === "SUCCESS") {
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré avec succès ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
+    } else {
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${data.error || 'Impossible de générer le PDF'}</div>`;
+    }
+  } catch(e) {
+    pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur réseau lors de la génération du PDF.</div>`;
   }
 });
 
