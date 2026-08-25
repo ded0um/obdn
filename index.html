@@ -155,15 +155,12 @@
           <div style="width:140px;">
             <label for="annualYear">Année :</label>
             <select id="annualYear" class="btn btn-ghost" style="width:100%; justify-content:space-between; cursor:pointer;">
-              <option value="2026">2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
+              <!-- Les années seront générées automatiquement -->
             </select>
           </div>
         </div>
         <div class="controls" style="margin-top:12px;">
           <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif annuel</button>
-          <!-- BOUTON AJOUTÉ POUR LE PDF -->
           <button id="generatePdfBtn" class="btn btn-yapla" style="background:var(--black); color:var(--input-bg);">Générer le reçu fiscal (PDF)</button>
         </div>
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
@@ -228,7 +225,6 @@ const annualYear = document.getElementById('annualYear');
 const generateAnnualBtn = document.getElementById('generateAnnualBtn');
 const annualOutput = document.getElementById('annualOutput');
 
-// Éléments PDF ajoutés
 const generatePdfBtn = document.getElementById('generatePdfBtn');
 const pdfOutput = document.getElementById('pdfOutput');
 
@@ -237,10 +233,25 @@ let isSubmitted = false;
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
 
+/* Génération automatique des années dans le menu déroulant */
+function initYearSelect() {
+  const currentYear = new Date().getFullYear();
+  annualYear.innerHTML = '';
+  for (let y = currentYear; y >= currentYear - 3; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) {
+      opt.selected = true;
+    }
+    annualYear.appendChild(opt);
+  }
+}
+
 /* Utilities */
 function normalizeAmount(raw){
   if(!raw) return '';
-  let s = String(raw).replace(/\u00A0/g,' ').trim();
+  let s = String(raw).replace(/ /g,' ').trim();
   s = s.replace(/\s/g,'');
   s = s.replace(/[^\d,.\-]/g,'');
   if(!s) return '';
@@ -275,7 +286,7 @@ async function loadDonorsFromSheet() {
       const key = `${d.nom} ${d.prenom}`.trim().toUpperCase();
       const opt = document.createElement('option');
       opt.value = key;
-      opt.textContent = `${d.nom} ${d.prenom} (${d.email || 'Pas d\'email'})`;
+      opt.textContent = `${d.nom} ${d.prenom} (${d.email || 'Pas d'email'})`;
       donorSelect.appendChild(opt);
     });
   } catch (e) {
@@ -285,7 +296,9 @@ async function loadDonorsFromSheet() {
 
 /* Parsing original de Yapla */
 function parseYapla(text){
-  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const lines = text.split(/
+?
+/).map(l=>l.trim()).filter(Boolean);
   const data = {};
   const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
   for(let i=0;i<lines.length;i++){
@@ -303,7 +316,7 @@ function parseYapla(text){
     if(email) data.courriel = email[0];
     const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
     if(montant) data.montant = montant[0];
-    const cp = L.match(/\b\d{5}\b/);
+    const cp = L.match(/ \d{5} /);
     if(cp) data.code_postal = cp[0];
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
     if(phone) data.telephone = phone[0].replace(/\s+/g,'');
@@ -409,14 +422,14 @@ function buildPrefillURL(parsed){
 }
 
 prefillBtn.addEventListener('click', () => {
-  if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
+  if(!lastParsed){ showMsg('Parser d'abord avant d'ouvrir le lien prérempli.'); return; }
   clearMsg();
   const url = buildPrefillURL(lastParsed);
   window.open(url, '_blank');
 });
 
 submitBtn.addEventListener('click', () => {
-  if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
+  if(!lastParsed){ showMsg('Parser d'abord avant de soumettre.'); return; }
   clearMsg();
 
   submitBtn.disabled = true;
@@ -462,7 +475,7 @@ anotherBtn.addEventListener('click', () => {
   clearMsg();
   window.scrollTo({ top: 0, behavior: 'smooth' });
   rawEl.focus();
-  loadDonorsFromSheet(); // Rafraîchit la liste des donateurs
+  loadDonorsFromSheet();
 });
 
 finishBtn.addEventListener('click', () => {
@@ -541,7 +554,8 @@ generatePdfBtn.addEventListener('click', async () => {
   }
 });
 
-// Chargement initial de la liste des donateurs au démarrage de la page
+// Initialisations au démarrage de la page
+initYearSelect();
 loadDonorsFromSheet();
 </script>
 </body>
