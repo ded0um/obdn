@@ -203,7 +203,6 @@ const mapping = {
   mode_paiement: 'entry.879040345'
 };
 
-// URL de votre application web Google Apps Script
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec';
 
 const rawEl = document.getElementById('raw');
@@ -251,7 +250,7 @@ function initYearSelect() {
 /* Utilities */
 function normalizeAmount(raw){
   if(!raw) return '';
-  let s = String(raw).replace(/ /g,' ').trim();
+  let s = String(raw).replace(/\u00A0/g,' ').trim();
   s = s.replace(/\s/g,'');
   s = s.replace(/[^\d,.\-]/g,'');
   if(!s) return '';
@@ -275,18 +274,30 @@ function isoToDDMMYYYY(iso){
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-/* Chargement des donateurs depuis le Google Sheet (multi-appareils) */
+/* Chargement des donateurs depuis le Google Sheet (triés par ordre alphabétique) */
 async function loadDonorsFromSheet() {
   try {
     const response = await fetch(SCRIPT_URL + '?action=donors');
     const donors = await response.json();
     
+    // Tri alphabétique sur le Nom (puis le Prénom)
+    donors.sort((a, b) => {
+      const nomA = (a.nom || '').trim().toUpperCase();
+      const nomB = (b.nom || '').trim().toUpperCase();
+      if (nomA !== nomB) return nomA.localeCompare(nomB);
+      const preA = (a.prenom || '').trim().toUpperCase();
+      const preB = (b.prenom || '').trim().toUpperCase();
+      return preA.localeCompare(preB);
+    });
+
     donorSelect.innerHTML = '<option value="">-- Sélectionnez un donateur --</option>';
     donors.forEach(d => {
       const key = `${d.nom} ${d.prenom}`.trim().toUpperCase();
       const opt = document.createElement('option');
       opt.value = key;
-      opt.textContent = `${d.nom} ${d.prenom} (${d.email || 'Pas d'email'})`;
+      // Nom Prénom en haut, email en dessous (représenté clairement sur une ligne de texte)
+      const emailText = d.email ? d.email : 'Pas d\'email';
+      opt.textContent = `${d.nom} ${d.prenom} — ${emailText}`;
       donorSelect.appendChild(opt);
     });
   } catch (e) {
@@ -296,9 +307,7 @@ async function loadDonorsFromSheet() {
 
 /* Parsing original de Yapla */
 function parseYapla(text){
-  const lines = text.split(/
-?
-/).map(l=>l.trim()).filter(Boolean);
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
   const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
   for(let i=0;i<lines.length;i++){
@@ -316,7 +325,7 @@ function parseYapla(text){
     if(email) data.courriel = email[0];
     const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
     if(montant) data.montant = montant[0];
-    const cp = L.match(/ \d{5} /);
+    const cp = L.match(/\b\d{5}\b/);
     if(cp) data.code_postal = cp[0];
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
     if(phone) data.telephone = phone[0].replace(/\s+/g,'');
@@ -422,14 +431,14 @@ function buildPrefillURL(parsed){
 }
 
 prefillBtn.addEventListener('click', () => {
-  if(!lastParsed){ showMsg('Parser d'abord avant d'ouvrir le lien prérempli.'); return; }
+  if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
   clearMsg();
   const url = buildPrefillURL(lastParsed);
   window.open(url, '_blank');
 });
 
 submitBtn.addEventListener('click', () => {
-  if(!lastParsed){ showMsg('Parser d'abord avant de soumettre.'); return; }
+  if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
 
   submitBtn.disabled = true;
