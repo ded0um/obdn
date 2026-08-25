@@ -203,8 +203,8 @@ const mapping = {
   mode_paiement: 'entry.879040345'
 };
 
-// Remplacez cette valeur par l'URL de votre application web Google Apps Script déployée
-const SCRIPT_URL = 'VOTRE_URL_GOOGLE_APPS_SCRIPT_ICI';
+// URL de votre application web Google Apps Script
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec';
 
 const rawEl = document.getElementById('raw');
 const parseBtn = document.getElementById('parseBtn');
@@ -259,10 +259,6 @@ function isoToDDMMYYYY(iso){
 
 /* Chargement des donateurs depuis le Google Sheet (multi-appareils) */
 async function loadDonorsFromSheet() {
-  if (SCRIPT_URL.includes('VOTRE_URL')) {
-    donorSelect.innerHTML = '<option value="">(Configurez SCRIPT_URL pour charger les donateurs)</option>';
-    return;
-  }
   try {
     const response = await fetch(SCRIPT_URL + '?action=donors');
     const donors = await response.json();
@@ -478,11 +474,6 @@ generateAnnualBtn.addEventListener('click', async () => {
 
   if(!selectedKey) {
     alert('Veuillez sélectionner un donateur.');
-    return;
-  }
-
-  if (SCRIPT_URL.includes('VOTRE_URL')) {
-    alert('Veuillez renseigner l\'URL de votre script Google Apps Script dans le code.');
     return;
   }
 
