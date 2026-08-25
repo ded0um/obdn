@@ -18,7 +18,7 @@
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
     .centered { 
       max-width: var(--max-w); 
-      margin:28px auto;           
+      margin:28px auto;            
       padding:0 12px 28px 12px;   
       box-sizing:border-box; 
     }
@@ -141,6 +141,32 @@
           <button id="finishBtn" class="btn btn-ghost">Fermer l'onglet</button>
         </div>
       </div>
+
+      <!-- SECTION: REÇU FISCAL ANNUEL (RÉCAPITULATIF) -->
+      <div class="preview" style="margin-top:32px;">
+        <div class="section-title" style="border-top:none;margin-top:0;">---- RÉCAPITULATIF ANNUEL (REÇU ANNUEL) ----</div>
+        <div class="controls">
+          <div style="flex:1; min-width:200px;">
+            <label for="donorSelect">Choisir le donateur :</label>
+            <select id="donorSelect" class="btn btn-ghost" style="width:100%; justify-content:space-between; cursor:pointer;">
+              <option value="">Chargement des donateurs...</option>
+            </select>
+          </div>
+          <div style="width:140px;">
+            <label for="annualYear">Année :</label>
+            <select id="annualYear" class="btn btn-ghost" style="width:100%; justify-content:space-between; cursor:pointer;">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+              <option value="2024">2024</option>
+            </select>
+          </div>
+        </div>
+        <div class="controls" style="margin-top:12px;">
+          <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif annuel</button>
+        </div>
+        <div id="annualOutput" style="margin-top:12px; display:none;"></div>
+      </div>
+
     </div>
   </div>
 
@@ -177,6 +203,9 @@ const mapping = {
   mode_paiement: 'entry.879040345'
 };
 
+// Remplacez cette valeur par l'URL de votre application web Google Apps Script déployée
+const SCRIPT_URL = 'VOTRE_URL_GOOGLE_APPS_SCRIPT_ICI';
+
 const rawEl = document.getElementById('raw');
 const parseBtn = document.getElementById('parseBtn');
 const prefillBtn = document.getElementById('prefillBtn');
@@ -190,6 +219,11 @@ const donateurFields = document.getElementById('donateurFields');
 const successBox = document.getElementById('successBox');
 const anotherBtn = document.getElementById('anotherBtn');
 const finishBtn = document.getElementById('finishBtn');
+
+const donorSelect = document.getElementById('donorSelect');
+const annualYear = document.getElementById('annualYear');
+const generateAnnualBtn = document.getElementById('generateAnnualBtn');
+const annualOutput = document.getElementById('annualOutput');
 
 let isSubmitted = false;
 
@@ -223,7 +257,30 @@ function isoToDDMMYYYY(iso){
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-/* Parsing */
+/* Chargement des donateurs depuis le Google Sheet (multi-appareils) */
+async function loadDonorsFromSheet() {
+  if (SCRIPT_URL.includes('VOTRE_URL')) {
+    donorSelect.innerHTML = '<option value="">(Configurez SCRIPT_URL pour charger les donateurs)</option>';
+    return;
+  }
+  try {
+    const response = await fetch(SCRIPT_URL + '?action=donors');
+    const donors = await response.json();
+    
+    donorSelect.innerHTML = '<option value="">-- Sélectionnez un donateur --</option>';
+    donors.forEach(d => {
+      const key = `${d.nom} ${d.prenom}`.trim().toUpperCase();
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = `${d.nom} ${d.prenom} (${d.email || 'Pas d\'email'})`;
+      donorSelect.appendChild(opt);
+    });
+  } catch (e) {
+    donorSelect.innerHTML = '<option value="">Erreur de chargement des donateurs</option>';
+  }
+}
+
+/* Parsing original de Yapla */
 function parseYapla(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
@@ -272,7 +329,7 @@ function parseYapla(text){
   };
 }
 
-/* Render preview in requested order */
+/* Render preview */
 function renderPreview(parsed){
   donFields.innerHTML = '';
   donateurFields.innerHTML = '';
@@ -317,10 +374,8 @@ function canParse(){
   clearMsg(); return true;
 }
 
-/* State */
 let lastParsed = null;
 
-/* Handlers */
 parseBtn.addEventListener('click', () => {
   if(!canParse()) return;
   const txt = rawEl.value;
@@ -334,7 +389,6 @@ parseBtn.addEventListener('click', () => {
   clearMsg();
 });
 
-/* Build prefill URL */
 function buildPrefillURL(parsed){
   const params = new URLSearchParams();
   if(parsed.prenom) params.set(mapping.prenom, parsed.prenom);
@@ -351,7 +405,6 @@ function buildPrefillURL(parsed){
   return viewBase + '?usp=pp_url&' + params.toString();
 }
 
-/* Prefill */
 prefillBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
   clearMsg();
@@ -359,7 +412,6 @@ prefillBtn.addEventListener('click', () => {
   window.open(url, '_blank');
 });
 
-/* Submit : Soumission transparente et invisible via iframe cachée */
 submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
@@ -387,12 +439,10 @@ submitBtn.addEventListener('click', () => {
 function showSuccess() {
   if(isSubmitted) {
     successBox.style.display = 'flex';
-    // Scroll automatique vers le bas en douceur
     successBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 }
 
-/* After success */
 anotherBtn.addEventListener('click', () => {
   rawEl.value = '';
   lastParsed = null;
@@ -407,8 +457,9 @@ anotherBtn.addEventListener('click', () => {
   parseBtn.disabled = false;
   rawEl.disabled = false;
   clearMsg();
-  window.scrollTo({ top: 0, behavior: 'smooth' }); // Remonte en haut pour le nouveau don
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   rawEl.focus();
+  loadDonorsFromSheet(); // Rafraîchit la liste des donateurs
 });
 
 finishBtn.addEventListener('click', () => {
@@ -419,6 +470,53 @@ finishBtn.addEventListener('click', () => {
     finishBtn.style.display = 'none';
   }, 300);
 });
+
+/* Génération du récapitulatif annuel en interrogeant Google Sheets */
+generateAnnualBtn.addEventListener('click', async () => {
+  const selectedKey = donorSelect.value;
+  const year = annualYear.value;
+
+  if(!selectedKey) {
+    alert('Veuillez sélectionner un donateur.');
+    return;
+  }
+
+  if (SCRIPT_URL.includes('VOTRE_URL')) {
+    alert('Veuillez renseigner l\'URL de votre script Google Apps Script dans le code.');
+    return;
+  }
+
+  annualOutput.style.display = 'block';
+  annualOutput.innerHTML = `<div style="padding:8px;">Recherche en cours dans Google Sheets...</div>`;
+
+  try {
+    const url = `${SCRIPT_URL}?action=annual&donor=${encodeURIComponent(selectedKey)}&year=${year}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if(data.count === 0) {
+      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Aucun don trouvé pour ce donateur en ${year}.</div>`;
+      return;
+    }
+
+    const s = data.sample;
+    annualOutput.innerHTML = `
+      <div style="border:1px solid var(--black); padding:12px; border-radius:4px; background:var(--input-bg);">
+        <div style="font-weight:900; margin-bottom:8px; font-size:14px;">RÉCAPITULATIF ANNUEL DE DONS (${year})</div>
+        <div class="field"><div class="label">Donateur :</div><div class="value">${s.nom} ${s.prenom}</div></div>
+        <div class="field"><div class="label">Adresse :</div><div class="value">${s.adresse || '-'} ${s.code_postal || ''} ${s.ville || ''}</div></div>
+        <div class="field"><div class="label">Nombre total de dons :</div><div class="value">${data.count}</div></div>
+        <div class="field"><div class="label">MONTANT TOTAL CUMULÉ :</div><div class="value" style="font-size:15px;">${data.total} €</div></div>
+        <div style="margin-top:12px; font-size:12px; font-weight:700;">Ce récapitulatif annuel peut maintenant être édité ou transmis au donateur.</div>
+      </div>
+    `;
+  } catch(e) {
+    annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Erreur lors de la récupération des données.</div>`;
+  }
+});
+
+// Chargement initial de la liste des donateurs au démarrage de la page
+loadDonorsFromSheet();
 </script>
 </body>
 </html>
