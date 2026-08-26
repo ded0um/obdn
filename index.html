@@ -106,7 +106,7 @@
       <!-- input paste -->
       <div>
         <label for="raw">1) Coller le texte copié depuis Yapla</label>
-        <textarea id="raw" placeholder=""></textarea>
+        <textarea id="raw" placeholder="Collez ici les informations du donateur et du don Yapla..."></textarea>
       </div>
 
       <!-- parser control -->
@@ -117,12 +117,12 @@
 
       <!-- preview -->
       <div id="previewBox" class="preview" style="display:none" aria-live="polite">
-        <div class="section-title">----DON----</div>
+        <div class="section-title" style="border-top:none;margin-top:0;">---- DON ----</div>
         <div id="donFields"></div>
 
         <div style="height:8px"></div>
 
-        <div class="section-title">----DONATEUR----</div>
+        <div class="section-title">---- DONATEUR ----</div>
         <div id="donateurFields"></div>
       </div>
 
@@ -148,7 +148,7 @@
         <div class="controls">
           <div style="flex:1; min-width:200px;">
             <label for="donorSelect">Choisir le donateur :</label>
-            <select id="donorSelect" class="btn btn-ghost" style="width:100%; justify-content:space-between; cursor:pointer;">
+            <select id="donorSelect" class="btn btn-ghost" style="width:100%; justify-content:space-between; cursor:pointer; text-align:left;">
               <option value="">Chargement des donateurs...</option>
             </select>
           </div>
@@ -256,6 +256,7 @@ function normalizeAmount(raw){
   if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
   return s;
 }
+
 function parseDateToYYYYMMDD(raw){
   if(!raw) return '';
   raw = String(raw).trim();
@@ -265,6 +266,7 @@ function parseDateToYYYYMMDD(raw){
   if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
   return '';
 }
+
 function isoToDDMMYYYY(iso){
   if(!iso) return '';
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -541,7 +543,6 @@ generateAnnualBtn.addEventListener('click', async () => {
   }
 });
 
-/* Génération du PDF, récupération et choix de l'e-mail (du plus ancien au plus récent, pré-sélection du plus récent) */
 generatePdfBtn.addEventListener('click', async () => {
   const selectedKey = donorSelect.value;
   const year = annualYear.value;
@@ -561,7 +562,6 @@ generatePdfBtn.addEventListener('click', async () => {
     let targetEmail = '';
 
     if (dataEmails.emails && dataEmails.emails.length > 0) {
-      // Les e-mails reçus sont triés de la plus ancienne à la plus récente. Le dernier est le plus récent.
       const mostRecentIndex = dataEmails.emails.length;
       
       let message = "Adresses e-mail trouvées pour ce donateur (de la plus ancienne à la plus récente) :\n\n";
@@ -573,7 +573,7 @@ generatePdfBtn.addEventListener('click', async () => {
       let choix = prompt(message, mostRecentIndex);
       if (choix === null) {
         pdfOutput.style.display = 'none';
-        return; // Annulation
+        return;
       }
       
       let indexChoisi = parseInt(choix) - 1;
