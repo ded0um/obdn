@@ -161,7 +161,7 @@
         </div>
         <div class="controls" style="margin-top:12px;">
           <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif annuel</button>
-          <button id="generatePdfBtn" class="btn btn-yapla" style="background:var(--black); color:var(--input-bg);">Générer le reçu fiscal (PDF)</button>
+          <button id="generatePdfBtn" class="btn btn-yapla" style="background:var(--black); color:var(--input-bg);">Générer & Envoyer le reçu (PDF)</button>
         </div>
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
         <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
@@ -232,7 +232,6 @@ let isSubmitted = false;
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
 
-/* Génération automatique des années dans le menu déroulant */
 function initYearSelect() {
   const currentYear = new Date().getFullYear();
   annualYear.innerHTML = '';
@@ -247,7 +246,6 @@ function initYearSelect() {
   }
 }
 
-/* Utilities */
 function normalizeAmount(raw){
   if(!raw) return '';
   let s = String(raw).replace(/\u00A0/g,' ').trim();
@@ -274,13 +272,11 @@ function isoToDDMMYYYY(iso){
   return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-/* Chargement des donateurs depuis le Google Sheet (triés et filtrés) */
 async function loadDonorsFromSheet() {
   try {
     const response = await fetch(SCRIPT_URL + '?action=donors');
     const donors = await response.json();
     
-    // Filtrage pour écarter les en-têtes, "TEST" et "Nom pour autocrat"
     const filteredDonors = donors.filter(d => {
       const nom = (d.nom || '').trim();
       const prenom = (d.prenom || '').trim();
@@ -290,14 +286,12 @@ async function loadDonorsFromSheet() {
       const nomUpper = nom.toUpperCase();
       const prenomUpper = prenom.toUpperCase();
       
-      // Exclusions
       if (nomUpper === 'TEST' || nomUpper.includes('NOM POUR AUTOCRAT')) return false;
       if (nomUpper === 'NOM' && prenomUpper === 'PRENOM') return false;
       
       return true;
     });
 
-    // Tri alphabétique sur le Nom (puis le Prénom)
     filteredDonors.sort((a, b) => {
       const nomA = (a.nom || '').trim().toUpperCase();
       const nomB = (b.nom || '').trim().toUpperCase();
@@ -321,7 +315,6 @@ async function loadDonorsFromSheet() {
   }
 }
 
-/* Parsing original de Yapla */
 function parseYapla(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
@@ -370,7 +363,6 @@ function parseYapla(text){
   };
 }
 
-/* Render preview */
 function renderPreview(parsed){
   donFields.innerHTML = '';
   donateurFields.innerHTML = '';
@@ -408,7 +400,6 @@ function renderPreview(parsed){
   }
 }
 
-/* Validation */
 function canParse(){
   const raw = rawEl.value.trim();
   if(!raw){ showMsg("Veuillez coller d'abord le texte Yapla."); return false; }
@@ -512,7 +503,6 @@ finishBtn.addEventListener('click', () => {
   }, 300);
 });
 
-/* Génération du récapitulatif annuel en interrogeant Google Sheets */
 generateAnnualBtn.addEventListener('click', async () => {
   const selectedKey = donorSelect.value;
   const year = annualYear.value;
@@ -551,7 +541,7 @@ generateAnnualBtn.addEventListener('click', async () => {
   }
 });
 
-/* Déclenchement de la génération du PDF via Google Apps Script */
+/* Génération du PDF, récupération et choix de l'e-mail (du plus ancien au plus récent, pré-sélection du plus récent) */
 generatePdfBtn.addEventListener('click', async () => {
   const selectedKey = donorSelect.value;
   const year = annualYear.value;
@@ -562,24 +552,61 @@ generatePdfBtn.addEventListener('click', async () => {
   }
 
   pdfOutput.style.display = 'block';
-  pdfOutput.innerHTML = `<div style="padding:8px;">Génération du reçu fiscal PDF en cours...</div>`;
+  pdfOutput.innerHTML = `<div style="padding:8px;">Récupération des adresses e-mail du donateur...</div>`;
 
   try {
-    const url = `${SCRIPT_URL}?action=generate_pdf&donor=${encodeURIComponent(selectedKey)}&year=${year}`;
+    const resEmails = await fetch(`${SCRIPT_URL}?action=get_donor_emails&donor=${encodeURIComponent(selectedKey)}`);
+    const dataEmails = await resEmails.json();
+
+    let targetEmail = '';
+
+    if (dataEmails.emails && dataEmails.emails.length > 0) {
+      // Les e-mails reçus sont triés de la plus ancienne à la plus récente. Le dernier est le plus récent.
+      const mostRecentIndex = dataEmails.emails.length;
+      
+      let message = "Adresses e-mail trouvées pour ce donateur (de la plus ancienne à la plus récente) :\n\n";
+      dataEmails.emails.forEach((email, index) => {
+        message += `${index + 1}: ${email}\n`;
+      });
+      message += `\nEntrez le numéro de l'e-mail à utiliser pour l'envoi (le plus récent est pré-sélectionné) :`;
+      
+      let choix = prompt(message, mostRecentIndex);
+      if (choix === null) {
+        pdfOutput.style.display = 'none';
+        return; // Annulation
+      }
+      
+      let indexChoisi = parseInt(choix) - 1;
+      if (dataEmails.emails[indexChoisi]) {
+        targetEmail = dataEmails.emails[indexChoisi];
+      } else {
+        targetEmail = dataEmails.emails[dataEmails.emails.length - 1];
+      }
+    } else {
+      let manualEmail = prompt("Aucune adresse e-mail trouvée dans l'historique. Entrez une adresse e-mail pour l'envoi :");
+      if (!manualEmail) {
+        pdfOutput.style.display = 'none';
+        return;
+      }
+      targetEmail = manualEmail.trim();
+    }
+
+    pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${targetEmail} en cours...</div>`;
+
+    const url = `${SCRIPT_URL}?action=generate_pdf&donor=${encodeURIComponent(selectedKey)}&year=${year}&email=${encodeURIComponent(targetEmail)}`;
     const response = await fetch(url);
     const data = await response.json();
 
     if(data.status === "SUCCESS") {
-      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré avec succès ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré, sauvegardé et envoyé à ${targetEmail} ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
     } else {
       pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${data.error || 'Impossible de générer le PDF'}</div>`;
     }
   } catch(e) {
-    pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur réseau lors de la génération du PDF.</div>`;
+    pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur réseau lors du traitement.</div>`;
   }
 });
 
-// Initialisations au démarrage de la page
 initYearSelect();
 loadDonorsFromSheet();
 </script>
