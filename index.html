@@ -562,9 +562,13 @@ generatePdfBtn.addEventListener('click', async () => {
     let targetEmail = '';
 
     if (dataEmails.emails && dataEmails.emails.length > 0) {
-      // CORRECTION : On inverse explicitement le tableau ici pour que le premier élément (index 0) 
-      // soit la dernière ligne saisie (la plus récente).
-      const sortedEmails = [...dataEmails.emails].reverse();
+      let sortedEmails = [...dataEmails.emails];
+      if (dataEmails.default_email) {
+        sortedEmails = [
+          dataEmails.default_email, 
+          ...sortedEmails.filter(e => e !== dataEmails.default_email)
+        ];
+      }
 
       targetEmail = await new Promise((resolve) => {
         const modalOverlay = document.createElement('div');
@@ -575,7 +579,6 @@ generatePdfBtn.addEventListener('click', async () => {
         
         let optionsHtml = '';
         sortedEmails.forEach((email, index) => {
-          // L'index 0 est désormais le plus récent de manière garantie
           const badge = (index === 0) ? " (Le plus récent)" : "";
           const isSelected = (index === 0) ? "selected" : "";
           optionsHtml += `<option value="${email}" ${isSelected}>${email}${badge}</option>`;
