@@ -562,26 +562,57 @@ generatePdfBtn.addEventListener('click', async () => {
     let targetEmail = '';
 
     if (dataEmails.emails && dataEmails.emails.length > 0) {
-      const mostRecentIndex = dataEmails.emails.length;
-      
-      let message = "Adresses e-mail trouvées pour ce donateur (de la plus ancienne à la plus récente) :\n\n";
-      dataEmails.emails.forEach((email, index) => {
-        message += `${index + 1}: ${email}\n`;
+      // On s'assure d'avoir la plus récente en premier
+      const sortedEmails = [...dataEmails.emails].reverse();
+
+      // On crée une modale propre en HTML injectée dynamiquement
+      targetEmail = await new Promise((resolve) => {
+        const modalOverlay = document.createElement('div');
+        modalOverlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;";
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = "background:white;padding:20px;border-radius:8px;max-width:400px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:inherit;";
+        
+        let optionsHtml = '';
+        sortedEmails.forEach((email, index) => {
+          // Le premier (index 0) est le plus récent, on le met selected par défaut
+          const badge = (index === 0) ? " (Le plus récent)" : "";
+          const isSelected = (index === 0) ? "selected" : "";
+          optionsHtml += `<option value="${email}" ${isSelected}>${email}${badge}</option>`;
+        });
+
+        modalContent.innerHTML = `
+          <h3 style="margin-top:0;font-size:1.1rem;margin-bottom:12px;">Choisir l'adresse de destinataire</h3>
+          <p style="font-size:0.9rem;color:#555;margin-bottom:12px;">Sélectionnez l'e-mail à utiliser pour l'envoi du reçu :</p>
+          <select id="modalEmailSelect" style="width:100%;padding:8px;margin-bottom:16px;border:1px solid #ccc;border-radius:4px;font-size:0.95rem;">
+            ${optionsHtml}
+          </select>
+          <div style="display:flex;justify-content:flex-end;gap:8px;">
+            <button id="modalCancel" style="padding:8px 16px;border:1px solid #ccc;background:#f5f5f5;border-radius:4px;cursor:pointer;">Annuler</button>
+            <button id="modalConfirm" style="padding:8px 16px;background:#000;color:#fff;border:none;border-radius:4px;cursor:pointer;">Envoyer</button>
+          </div>
+        `;
+
+        modalOverlay.appendChild(modalContent);
+        document.body.appendChild(modalOverlay);
+
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+          const val = document.getElementById('modalEmailSelect').value;
+          document.body.removeChild(modalOverlay);
+          resolve(val);
+        });
+
+        document.getElementById('modalCancel').addEventListener('click', () => {
+          document.body.removeChild(modalOverlay);
+          resolve(null);
+        });
       });
-      message += `\nEntrez le numéro de l'e-mail à utiliser pour l'envoi (le plus récent est pré-sélectionné) :`;
-      
-      let choix = prompt(message, mostRecentIndex);
-      if (choix === null) {
+
+      if (!targetEmail) {
         pdfOutput.style.display = 'none';
         return;
       }
-      
-      let indexChoisi = parseInt(choix) - 1;
-      if (dataEmails.emails[indexChoisi]) {
-        targetEmail = dataEmails.emails[indexChoisi];
-      } else {
-        targetEmail = dataEmails.emails[dataEmails.emails.length - 1];
-      }
+
     } else {
       let manualEmail = prompt("Aucune adresse e-mail trouvée dans l'historique. Entrez une adresse e-mail pour l'envoi :");
       if (!manualEmail) {
