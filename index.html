@@ -106,11 +106,17 @@
       </div>
       <div class="header-actions">
         <a class="btn yapla-btn" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
+        <button id="toggleViewBtn" class="btn btn-ghost" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+          <span id="toggleViewLabel">Récapitulatif annuel</span>
+        </button>
       </div>
     </div>
 
     <!-- body -->
     <div class="body">
+      <!-- vue 1 : parser un don -->
+      <div id="parserSection">
       <!-- input paste -->
       <div>
         <label for="raw">1) Coller le texte copié depuis Yapla</label>
@@ -150,8 +156,11 @@
         </div>
       </div>
 
-      <!-- SECTION: REÇU FISCAL ANNUEL (RÉCAPITULATIF) -->
-      <div class="preview" style="margin-top:32px;">
+      </div>
+      <!-- fin vue 1 -->
+
+      <!-- vue 2 : SECTION REÇU FISCAL ANNUEL (RÉCAPITULATIF) -->
+      <div id="annualSection" class="preview" style="display:none;">
         <div class="section-title" style="border-top:none;margin-top:0;">---- RÉCAPITULATIF ANNUEL (REÇU ANNUEL) ----</div>
         <div class="controls">
           <div style="flex:1; min-width:200px;">
@@ -168,12 +177,13 @@
           </div>
         </div>
         <div class="controls" style="margin-top:12px;">
-          <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif annuel</button>
-          <button id="generatePdfBtn" class="btn btn-primary">Générer & Envoyer le reçu (PDF)</button>
+          <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif</button>
+          <button id="generatePdfBtn" class="btn btn-primary" disabled>Générer & Envoyer le Reçu Fiscal Annuel (PDF)</button>
         </div>
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
         <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
       </div>
+      <!-- fin vue 2 -->
 
     </div>
   </div>
@@ -238,6 +248,11 @@ const annualOutput = document.getElementById('annualOutput');
 
 const generatePdfBtn = document.getElementById('generatePdfBtn');
 const pdfOutput = document.getElementById('pdfOutput');
+
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const toggleViewLabel = document.getElementById('toggleViewLabel');
+const parserSection = document.getElementById('parserSection');
+const annualSection = document.getElementById('annualSection');
 
 let isSubmitted = false;
 
@@ -535,6 +550,7 @@ generateAnnualBtn.addEventListener('click', async () => {
   }
 
   generateAnnualBtn.disabled = true;
+  generatePdfBtn.disabled = true;
   annualOutput.style.display = 'block';
   annualOutput.innerHTML = `<div style="padding:8px;">Recherche en cours dans Google Sheets...</div>`;
 
@@ -564,6 +580,7 @@ generateAnnualBtn.addEventListener('click', async () => {
         <div style="margin-top:12px; font-size:12px; font-weight:700;">Ce récapitulatif annuel peut maintenant être édité ou transmis au donateur.</div>
       </div>
     `;
+    generatePdfBtn.disabled = false;
   } catch(e) {
     annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Erreur lors de la récupération des données.</div>`;
   } finally {
@@ -685,6 +702,27 @@ generatePdfBtn.addEventListener('click', async () => {
   } finally {
     generatePdfBtn.disabled = false;
   }
+});
+
+let showingAnnual = false;
+toggleViewBtn.addEventListener('click', () => {
+  showingAnnual = !showingAnnual;
+  parserSection.style.display = showingAnnual ? 'none' : 'block';
+  annualSection.style.display = showingAnnual ? 'block' : 'none';
+  toggleViewLabel.textContent = showingAnnual ? 'Parser un don' : 'Récapitulatif annuel';
+});
+
+// Le bouton "Envoyer le Reçu Fiscal Annuel" ne devient actif qu'après un
+// récapitulatif généré avec succès pour le donateur/année en cours. Tout
+// changement de sélection invalide ce récapitulatif pour éviter d'envoyer
+// un reçu qui ne correspond plus à ce qui a été vérifié à l'écran.
+donorSelect.addEventListener('change', () => {
+  generatePdfBtn.disabled = true;
+  annualOutput.style.display = 'none';
+});
+annualYear.addEventListener('change', () => {
+  generatePdfBtn.disabled = true;
+  annualOutput.style.display = 'none';
 });
 
 initYearSelect();
