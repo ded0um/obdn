@@ -82,6 +82,14 @@
 
     .preview-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
+    /* Modal de sélection d'email, dans le même style noir/blanc que le reste */
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;box-sizing:border-box}
+    .modal-box{background:var(--input-bg);border:2px solid var(--black);border-radius:4px;padding:18px;max-width:400px;width:100%;box-sizing:border-box}
+    .modal-box h3{margin:0 0 10px;font-size:16px;font-weight:900}
+    .modal-box p{margin:0 0 12px;font-size:13px}
+    .modal-box select{width:100%;padding:8px;margin-bottom:14px;border:1px solid var(--black);border-radius:2px;font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px}
+
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
@@ -161,7 +169,7 @@
         </div>
         <div class="controls" style="margin-top:12px;">
           <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif annuel</button>
-          <button id="generatePdfBtn" class="btn btn-yapla" style="background:var(--black); color:var(--input-bg);">Générer & Envoyer le reçu (PDF)</button>
+          <button id="generatePdfBtn" class="btn btn-primary">Générer & Envoyer le reçu (PDF)</button>
         </div>
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
         <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
@@ -205,6 +213,10 @@ const mapping = {
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec';
 
+// Jeton partagé : DOIT être identique à la constante TOKEN_PARTAGE du script Apps Script.
+// Envoyé à chaque appel pour empêcher un tiers d'interroger le script sans passer par cet outil.
+const API_TOKEN = 'b1a5caaf329bef0a5698361de58df201';
+
 const rawEl = document.getElementById('raw');
 const parseBtn = document.getElementById('parseBtn');
 const prefillBtn = document.getElementById('prefillBtn');
@@ -231,6 +243,14 @@ let isSubmitted = false;
 
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
+
+// Échappe le texte avant de l'insérer via innerHTML, pour qu'un champ contenant
+// des caractères type < > & " ne casse pas l'affichage (ou pire).
+function escapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
 
 function initYearSelect() {
   const currentYear = new Date().getFullYear();
@@ -276,7 +296,7 @@ function isoToDDMMYYYY(iso){
 
 async function loadDonorsFromSheet() {
   try {
-    const response = await fetch(SCRIPT_URL + '?action=donors');
+    const response = await fetch(`${SCRIPT_URL}?action=donors&token=${encodeURIComponent(API_TOKEN)}`);
     const donors = await response.json();
     
     const filteredDonors = donors.filter(d => {
@@ -377,7 +397,7 @@ function renderPreview(parsed){
   for(const [label, value] of donEntries){
     const row = document.createElement('div');
     row.className = 'field';
-    row.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+    row.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div>`;
     donFields.appendChild(row);
   }
 
@@ -397,7 +417,7 @@ function renderPreview(parsed){
   for(const [label, value] of donorEntries){
     const row = document.createElement('div');
     row.className = 'field';
-    row.innerHTML = `<div class="label">${label}</div><div class="value">${value}</div>`;
+    row.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div>`;
     donateurFields.appendChild(row);
   }
 }
@@ -514,34 +534,85 @@ generateAnnualBtn.addEventListener('click', async () => {
     return;
   }
 
+  generateAnnualBtn.disabled = true;
   annualOutput.style.display = 'block';
   annualOutput.innerHTML = `<div style="padding:8px;">Recherche en cours dans Google Sheets...</div>`;
 
   try {
-    const url = `${SCRIPT_URL}?action=annual&donor=${encodeURIComponent(selectedKey)}&year=${year}`;
+    const url = `${SCRIPT_URL}?action=annual&donor=${encodeURIComponent(selectedKey)}&year=${encodeURIComponent(year)}&token=${encodeURIComponent(API_TOKEN)}`;
     const response = await fetch(url);
     const data = await response.json();
 
+    if(data.error) {
+      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">${escapeHtml(data.error)}</div>`;
+      return;
+    }
+
     if(data.count === 0) {
-      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Aucun don trouvé pour ce donateur en ${year}.</div>`;
+      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Aucun don trouvé pour ce donateur en ${escapeHtml(year)}.</div>`;
       return;
     }
 
     const s = data.sample;
     annualOutput.innerHTML = `
       <div style="border:1px solid var(--black); padding:12px; border-radius:4px; background:var(--input-bg);">
-        <div style="font-weight:900; margin-bottom:8px; font-size:14px;">RÉCAPITULATIF ANNUEL DE DONS (${year})</div>
-        <div class="field"><div class="label">Donateur :</div><div class="value">${s.nom} ${s.prenom}</div></div>
-        <div class="field"><div class="label">Adresse :</div><div class="value">${s.adresse || '-'} ${s.code_postal || ''} ${s.ville || ''}</div></div>
-        <div class="field"><div class="label">Nombre total de dons :</div><div class="value">${data.count}</div></div>
-        <div class="field"><div class="label">MONTANT TOTAL CUMULÉ :</div><div class="value" style="font-size:15px;">${data.total} €</div></div>
+        <div style="font-weight:900; margin-bottom:8px; font-size:14px;">RÉCAPITULATIF ANNUEL DE DONS (${escapeHtml(year)})</div>
+        <div class="field"><div class="label">Donateur :</div><div class="value">${escapeHtml(s.nom)} ${escapeHtml(s.prenom)}</div></div>
+        <div class="field"><div class="label">Adresse :</div><div class="value">${escapeHtml(s.adresse || '-')} ${escapeHtml(s.code_postal || '')} ${escapeHtml(s.ville || '')}</div></div>
+        <div class="field"><div class="label">Nombre total de dons :</div><div class="value">${escapeHtml(data.count)}</div></div>
+        <div class="field"><div class="label">MONTANT TOTAL CUMULÉ :</div><div class="value" style="font-size:15px;">${escapeHtml(data.total)} €</div></div>
         <div style="margin-top:12px; font-size:12px; font-weight:700;">Ce récapitulatif annuel peut maintenant être édité ou transmis au donateur.</div>
       </div>
     `;
   } catch(e) {
     annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Erreur lors de la récupération des données.</div>`;
+  } finally {
+    generateAnnualBtn.disabled = false;
   }
 });
+
+// Affiche une modal (dans le style noir/blanc de l'outil) pour choisir l'email
+// de destination. Résout avec l'email choisi, ou null si annulé.
+function askEmailChoice(sortedEmails, selectedKey, year){
+  return new Promise((resolve) => {
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-box';
+
+    let optionsHtml = '';
+    sortedEmails.forEach((email, index) => {
+      const badge = (index === 0) ? " (le plus récent)" : "";
+      const isSelected = (index === 0) ? "selected" : "";
+      optionsHtml += `<option value="${escapeHtml(email)}" ${isSelected}>${escapeHtml(email)}${escapeHtml(badge)}</option>`;
+    });
+
+    modalContent.innerHTML = `
+      <h3>Envoyer le reçu — ${escapeHtml(selectedKey)} (${escapeHtml(year)})</h3>
+      <p>Sélectionne l'adresse e-mail du destinataire :</p>
+      <select id="modalEmailSelect">${optionsHtml}</select>
+      <div class="modal-actions">
+        <button id="modalCancel" class="btn btn-ghost" type="button">Annuler</button>
+        <button id="modalConfirm" class="btn btn-primary" type="button">Envoyer</button>
+      </div>
+    `;
+
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    document.getElementById('modalConfirm').addEventListener('click', () => {
+      const val = document.getElementById('modalEmailSelect').value;
+      document.body.removeChild(modalOverlay);
+      resolve(val);
+    });
+
+    document.getElementById('modalCancel').addEventListener('click', () => {
+      document.body.removeChild(modalOverlay);
+      resolve(null);
+    });
+  });
+}
 
 generatePdfBtn.addEventListener('click', async () => {
   const selectedKey = donorSelect.value;
@@ -552,11 +623,12 @@ generatePdfBtn.addEventListener('click', async () => {
     return;
   }
 
+  generatePdfBtn.disabled = true;
   pdfOutput.style.display = 'block';
   pdfOutput.innerHTML = `<div style="padding:8px;">Récupération des adresses e-mail du donateur...</div>`;
 
   try {
-    const resEmails = await fetch(`${SCRIPT_URL}?action=get_donor_emails&donor=${encodeURIComponent(selectedKey)}`);
+    const resEmails = await fetch(`${SCRIPT_URL}?action=get_donor_emails&donor=${encodeURIComponent(selectedKey)}&token=${encodeURIComponent(API_TOKEN)}`);
     const dataEmails = await resEmails.json();
 
     let targetEmail = '';
@@ -570,46 +642,7 @@ generatePdfBtn.addEventListener('click', async () => {
         ];
       }
 
-      targetEmail = await new Promise((resolve) => {
-        const modalOverlay = document.createElement('div');
-        modalOverlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;";
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = "background:white;padding:20px;border-radius:8px;max-width:400px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:inherit;";
-        
-        let optionsHtml = '';
-        sortedEmails.forEach((email, index) => {
-          const badge = (index === 0) ? " (Le plus récent)" : "";
-          const isSelected = (index === 0) ? "selected" : "";
-          optionsHtml += `<option value="${email}" ${isSelected}>${email}${badge}</option>`;
-        });
-
-        modalContent.innerHTML = `
-          <h3 style="margin-top:0;font-size:1.1rem;margin-bottom:12px;">Choisir l'adresse de destinataire</h3>
-          <p style="font-size:0.9rem;color:#555;margin-bottom:12px;">Sélectionnez l'e-mail à utiliser pour l'envoi du reçu :</p>
-          <select id="modalEmailSelect" style="width:100%;padding:8px;margin-bottom:16px;border:1px solid #ccc;border-radius:4px;font-size:0.95rem;">
-            ${optionsHtml}
-          </select>
-          <div style="display:flex;justify-content:flex-end;gap:8px;">
-            <button id="modalCancel" style="padding:8px 16px;border:1px solid #ccc;background:#f5f5f5;border-radius:4px;cursor:pointer;">Annuler</button>
-            <button id="modalConfirm" style="padding:8px 16px;background:#000;color:#fff;border:none;border-radius:4px;cursor:pointer;">Envoyer</button>
-          </div>
-        `;
-
-        modalOverlay.appendChild(modalContent);
-        document.body.appendChild(modalOverlay);
-
-        document.getElementById('modalConfirm').addEventListener('click', () => {
-          const val = document.getElementById('modalEmailSelect').value;
-          document.body.removeChild(modalOverlay);
-          resolve(val);
-        });
-
-        document.getElementById('modalCancel').addEventListener('click', () => {
-          document.body.removeChild(modalOverlay);
-          resolve(null);
-        });
-      });
+      targetEmail = await askEmailChoice(sortedEmails, selectedKey, year);
 
       if (!targetEmail) {
         pdfOutput.style.display = 'none';
@@ -625,19 +658,32 @@ generatePdfBtn.addEventListener('click', async () => {
       targetEmail = manualEmail.trim();
     }
 
-    pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${targetEmail} en cours...</div>`;
+    pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${escapeHtml(targetEmail)} en cours...</div>`;
 
-    const url = `${SCRIPT_URL}?action=generate_pdf&donor=${encodeURIComponent(selectedKey)}&year=${year}&email=${encodeURIComponent(targetEmail)}`;
-    const response = await fetch(url);
+    // Envoyé en POST (plutôt qu'en GET) car cette action a un effet de bord
+    // (création de fichier + envoi d'email) : ça évite qu'un simple
+    // pré-chargement de lien ou un historique de navigateur ne la redéclenche.
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: new URLSearchParams({
+        action: 'generate_pdf',
+        donor: selectedKey,
+        year: year,
+        email: targetEmail,
+        token: API_TOKEN
+      })
+    });
     const data = await response.json();
 
     if(data.status === "SUCCESS") {
-      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré, sauvegardé et envoyé à ${targetEmail} ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré, sauvegardé et envoyé à ${escapeHtml(targetEmail)} ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
     } else {
-      pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${data.error || 'Impossible de générer le PDF'}</div>`;
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${escapeHtml(data.error || 'Impossible de générer le PDF')}</div>`;
     }
   } catch(e) {
     pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur réseau lors du traitement.</div>`;
+  } finally {
+    generatePdfBtn.disabled = false;
   }
 });
 
