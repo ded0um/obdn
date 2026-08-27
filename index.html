@@ -114,6 +114,9 @@
     .dselect-wrap{position:relative;}
     .dselect-native{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     .dselect-trigger{width:100%;}
+    .dselect-label{flex:1;min-width:0;overflow:hidden;text-align:left;}
+    .dselect-label .dselect-option-main,
+    .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .dselect-chevron{flex-shrink:0;transition:transform .15s ease;margin-left:auto;}
     .dselect-wrap.open .dselect-chevron{transform:rotate(180deg);}
     .dselect-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:var(--input-bg);border:2px solid var(--black);border-radius:4px;max-height:240px;overflow-y:auto;box-shadow:0 4px 10px rgba(0,0,0,0.2);}
@@ -207,7 +210,7 @@
                 <option value="">Chargement des donateurs...</option>
               </select>
               <button type="button" class="btn btn-ghost dselect-trigger" style="justify-content:space-between; text-align:left;">
-                <span class="dselect-label">Chargement des donateurs...</span>
+                <div class="dselect-label">Chargement des donateurs...</div>
                 <svg class="dselect-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
               <div class="dselect-list" role="listbox"></div>
@@ -220,7 +223,7 @@
                 <!-- Les années seront générées automatiquement -->
               </select>
               <button type="button" class="btn btn-ghost dselect-trigger" style="justify-content:space-between;">
-                <span class="dselect-label">--</span>
+                <div class="dselect-label">--</div>
                 <svg class="dselect-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </button>
               <div class="dselect-list" role="listbox"></div>
@@ -357,7 +360,23 @@ function enhanceDselect(selectEl) {
       list.appendChild(item);
     });
     const selected = selectEl.options[selectEl.selectedIndex];
-    label.textContent = selected ? selected.textContent : '';
+    label.innerHTML = '';
+    if (selected) {
+      if (selected.dataset.name) {
+        const main = document.createElement('div');
+        main.className = 'dselect-option-main';
+        main.textContent = selected.dataset.name;
+        label.appendChild(main);
+        if (selected.dataset.email) {
+          const sub = document.createElement('div');
+          sub.className = 'dselect-option-sub';
+          sub.textContent = selected.dataset.email;
+          label.appendChild(sub);
+        }
+      } else {
+        label.textContent = selected.textContent;
+      }
+    }
   }
 
   function open() {
