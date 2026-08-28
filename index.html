@@ -143,7 +143,7 @@
         <div class="header-title">Parseur et Envoyeur vers GForm</div>
       </div>
       <div class="header-actions">
-        <a class="btn yapla-btn" href="https://s2.yapla.com/donation/fr/campaign/list" target="_blank" rel="noopener">Ouvrir dons Yapla</a>
+        <button type="button" id="openYaplaBtn" class="btn yapla-btn">Ouvrir dons Yapla</button>
         <button id="toggleViewBtn" class="btn btn-ghost" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
           <span id="toggleViewLabel">Récapitulatif annuel</span>
@@ -307,6 +307,17 @@ const toggleViewBtn = document.getElementById('toggleViewBtn');
 const toggleViewLabel = document.getElementById('toggleViewLabel');
 const parserSection = document.getElementById('parserSection');
 const annualSection = document.getElementById('annualSection');
+
+const openYaplaBtn = document.getElementById('openYaplaBtn');
+const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
+// Référence gardée pour pouvoir refermer l'onglet Yapla en même temps que
+// celui-ci (uniquement possible pour un onglet ouvert via window.open depuis
+// cette page - un onglet ouvert autrement ne peut pas être fermé par script).
+let yaplaWindow = null;
+
+openYaplaBtn.addEventListener('click', () => {
+  yaplaWindow = window.open(YAPLA_URL, '_blank');
+});
 
 let isSubmitted = false;
 
@@ -681,6 +692,9 @@ anotherBtn.addEventListener('click', () => {
 });
 
 finishBtn.addEventListener('click', () => {
+  if (yaplaWindow && !yaplaWindow.closed) {
+    yaplaWindow.close();
+  }
   window.close();
   setTimeout(() => {
     successBox.querySelector('.text').textContent = 'Tu peux fermer cet onglet manuellement.';
