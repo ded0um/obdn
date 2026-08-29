@@ -55,6 +55,7 @@
       cursor:pointer;
       display:inline-flex;
       align-items:center;
+      justify-content:center;
       gap:8px;
       text-decoration:none;
     }
@@ -131,7 +132,8 @@
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
-      .preview-actions{justify-content:flex-start}
+      .preview-actions{flex-direction:column;align-items:stretch;justify-content:flex-start}
+      .header-actions{width:100%;justify-content:space-between}
     }
   </style>
 </head>
@@ -159,7 +161,7 @@
 
       <!-- input paste -->
       <div>
-        <label for="raw">1) Coller le texte copié depuis Yapla</label>
+        <label for="raw">Coller le texte copié depuis Yapla</label>
         <textarea id="raw" placeholder="Collez ici les informations du donateur et du don Yapla..."></textarea>
       </div>
 
@@ -343,6 +345,27 @@ function enhanceDselect(selectEl) {
   const label = wrap.querySelector('.dselect-label');
   const list = wrap.querySelector('.dselect-list');
 
+  function updateLabel() {
+    const selected = selectEl.options[selectEl.selectedIndex];
+    label.innerHTML = '';
+    if (selected) {
+      if (selected.dataset.name) {
+        const main = document.createElement('div');
+        main.className = 'dselect-option-main';
+        main.textContent = selected.dataset.name;
+        label.appendChild(main);
+        if (selected.dataset.email) {
+          const sub = document.createElement('div');
+          sub.className = 'dselect-option-sub';
+          sub.textContent = selected.dataset.email;
+          label.appendChild(sub);
+        }
+      } else {
+        label.textContent = selected.textContent;
+      }
+    }
+  }
+
   function render() {
     list.innerHTML = '';
     Array.from(selectEl.options).forEach((opt) => {
@@ -366,28 +389,12 @@ function enhanceDselect(selectEl) {
       item.addEventListener('click', () => {
         selectEl.value = opt.value;
         selectEl.dispatchEvent(new Event('change'));
+        updateLabel();
         close();
       });
       list.appendChild(item);
     });
-    const selected = selectEl.options[selectEl.selectedIndex];
-    label.innerHTML = '';
-    if (selected) {
-      if (selected.dataset.name) {
-        const main = document.createElement('div');
-        main.className = 'dselect-option-main';
-        main.textContent = selected.dataset.name;
-        label.appendChild(main);
-        if (selected.dataset.email) {
-          const sub = document.createElement('div');
-          sub.className = 'dselect-option-sub';
-          sub.textContent = selected.dataset.email;
-          label.appendChild(sub);
-        }
-      } else {
-        label.textContent = selected.textContent;
-      }
-    }
+    updateLabel();
   }
 
   function open() {
