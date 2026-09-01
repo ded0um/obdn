@@ -1,277 +1,936 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Parseur et Envoyeur vers GForm</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
+    /* Palette noir/blanc + gris d'arrière-plan, pas de container bordé */
     :root{
-      --page-bg:#e6e6e6; --header-bg:#d9d9d9; --input-bg:#fff; --black:#000;
-      --yapla-orange:#f59e0b; --badge-don:#16a34a; --badge-recap:#2563eb;
-      --max-w:920px;
+      --page-bg: #e6e6e6;
+      --header-bg: #d9d9d9;
+      --input-bg: #ffffff;
+      --black: #000000;
+      --max-w: 920px;
+      --yapla-orange: #f59e0b;
     }
-    html,body{height:100%;margin:0;background:var(--page-bg);font-family:Arial,Helvetica,sans-serif;color:var(--black)}
-    .centered{max-width:var(--max-w);margin:28px auto;padding:0 12px 28px 12px;box-sizing:border-box}
-    .header-banner{background:var(--header-bg);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:6px}
-    .header-title{font-weight:900;font-size:18px}
-    .header-actions{display:flex;gap:8px;align-items:center}
-    .btn{padding:8px 12px;border-radius:4px;border:2px solid var(--black);background:var(--input-bg);font-weight:700;cursor:pointer}
-    .btn-primary{background:var(--black);color:var(--input-bg)}
-    .btn-ghost{background:var(--input-bg)}
-    .yapla-btn{background:var(--yapla-orange);color:#fff;border-color:#b45309}
+
+    html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
+    .centered { 
+      max-width: var(--max-w); 
+      margin:28px auto;         
+      padding:0 12px 28px 12px;   
+      box-sizing:border-box; 
+    }
+
+    .header-banner{
+      background:var(--header-bg);
+      padding:16px 18px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      border-radius:6px;
+      box-sizing:border-box;
+    }
+    .header-left{display:flex;flex-direction:column;gap:6px}
+    .header-title{font-size:18px;margin:0;font-weight:900;color:var(--black)}
+    .header-actions { display:flex; gap:8px; align-items:center; }
+    .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
+    #toggleViewBtn { min-width:195px; justify-content:center; }
+
+    .body{padding:16px 0 0 0;background:transparent}
+    label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
+    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
+    .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+
+    .btn{
+      padding:8px 12px;
+      border-radius:2px;
+      border:2px solid var(--black);
+      background: var(--input-bg);
+      color: var(--black);
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-decoration:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+    .btn-primary{ background: var(--black); color: var(--input-bg); }
+    .btn-ghost{ background: var(--input-bg); color: var(--black); }
+
+    /* Menu déroulant personnalisé (remplace le rendu système bleu des <select>) */
+    .cs-wrapper{ position:relative; width:100%; }
+    .cs-native{ position:absolute; opacity:0; pointer-events:none; height:0; width:0; margin:0; padding:0; border:0; }
+    .cs-trigger{ width:100%; justify-content:space-between; text-align:left; }
+    .cs-trigger .cs-caret{ flex-shrink:0; transition:transform .15s ease; }
+    .cs-trigger.cs-open .cs-caret{ transform:rotate(180deg); }
+    .cs-trigger .cs-trigger-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cs-panel{
+      position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50;
+      background:var(--input-bg); border:2px solid var(--black); border-radius:4px;
+      max-height:240px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18);
+    }
+    .cs-option{ padding:10px 12px; font-size:14px; font-weight:700; cursor:pointer; border-bottom:1px dashed var(--black); }
+    .cs-option:last-child{ border-bottom:none; }
+    .cs-option:hover, .cs-option:active{ background:var(--black); color:var(--input-bg); }
+    .cs-option-selected{ background:var(--header-bg); }
+
+    .yapla-btn{
+      background: var(--yapla-orange);
+      color: #fff;
+      border-color: #b45309;
+    }
+
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
-    label{display:block;font-weight:700;margin-top:12px}
-    textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);box-sizing:border-box}
-    .section-title{font-weight:900;margin-top:10px;border-top:1px solid var(--black);padding-top:8px}
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;box-sizing:border-box}
-    .modal-box{background:var(--input-bg);border:2px solid var(--black);border-radius:6px;padding:14px;width:100%;max-width:980px;box-sizing:border-box}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
-    th{background:#fafafa;font-weight:700}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;color:#fff;font-weight:700;font-size:12px}
-    .badge-don{background:var(--badge-don)}
-    .badge-recap{background:var(--badge-recap)}
-    .empty{padding:16px;text-align:center;color:#666}
-    @media(max-width:640px){ .modal-box{max-width:95%} }
+    .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px;letter-spacing:.3px}
+    .field{padding:8px 0;border-bottom:1px dashed var(--black)}
+    .field:last-child{border-bottom:none}
+    .label{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.3px;opacity:.65;margin-bottom:3px}
+    .value{font-weight:700;font-size:15px;word-break:break-word;overflow-wrap:anywhere;line-height:1.35}
+    .msg{color:var(--black);font-weight:700;margin-top:8px}
+    .success { display:flex;align-items:center;gap:12px;border:1px solid var(--black);padding:12px;border-radius:6px;margin-top:12px;background:var(--input-bg) }
+    .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--input-bg);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
+    .success .text{font-weight:700;color:var(--black)}
+    .success-actions{margin-left:auto;display:flex;gap:8px}
+
+    .preview-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+    /* Modal de sélection d'email, dans le même style noir/blanc que le reste */
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;box-sizing:border-box}
+    .modal-box{background:var(--input-bg);border:2px solid var(--black);border-radius:4px;padding:18px;max-width:400px;width:100%;box-sizing:border-box}
+    .modal-box h3{margin:0 0 10px;font-size:16px;font-weight:900}
+    .modal-box p{margin:0 0 12px;font-size:13px}
+    .modal-box select{width:100%;padding:8px;margin-bottom:14px;border:1px solid var(--black);border-radius:2px;font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px}
+
+    /* Menus déroulants personnalisés (le <select> natif reste caché pour
+       porter la valeur/les événements, la liste ouverte est dessinée par nous
+       pour éviter le rendu bleu du système sur mobile) */
+    .dselect-wrap{position:relative;}
+    .dselect-native{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+    .dselect-trigger{width:100%;}
+    .dselect-label{flex:1;min-width:0;overflow:hidden;text-align:left;}
+    .dselect-label .dselect-option-main,
+    .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dselect-chevron{flex-shrink:0;transition:transform .15s ease;margin-left:auto;}
+    .dselect-wrap.open .dselect-chevron{transform:rotate(180deg);}
+    .dselect-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:var(--input-bg);border:2px solid var(--black);border-radius:4px;max-height:240px;overflow-y:auto;box-shadow:0 4px 10px rgba(0,0,0,0.2);}
+    .dselect-list.open{display:block;}
+    .dselect-option{padding:10px 12px;font-size:14px;font-weight:700;cursor:pointer;border-bottom:1px dashed var(--black);}
+    .dselect-option-main{font-weight:700;}
+    .dselect-option-sub{font-weight:400;font-size:12px;color:#707070;margin-top:2px;}
+    .dselect-option:hover .dselect-option-sub, .dselect-option.active .dselect-option-sub{color:#bfbfbf;}
+    .dselect-option:last-child{border-bottom:none;}
+    .dselect-option:hover, .dselect-option.active{background:var(--black);color:var(--input-bg);}
+
+    @media(max-width:640px){
+      .controls{flex-direction:column;align-items:stretch}
+      .header-banner{padding:14px}
+      .preview-actions{flex-direction:column;align-items:stretch;justify-content:flex-start}
+      .header-actions{width:100%;justify-content:space-between}
+    }
   </style>
 </head>
 <body>
   <div class="centered">
-    <div class="header-banner">
+    <!-- header banner -->
+    <div class="header-banner" aria-hidden="false">
       <div class="header-left">
         <div class="header-title">Parseur et Envoyeur vers GForm</div>
       </div>
       <div class="header-actions">
-        <button id="openYaplaBtn" class="btn yapla-btn">Ouvrir dons Yapla</button>
-        <button id="toggleViewBtn" class="btn btn-ghost"><span id="toggleViewLabel">Récapitulatif annuel</span></button>
+        <button type="button" id="openYaplaBtn" class="btn yapla-btn">Ouvrir dons Yapla</button>
+        <button id="toggleViewBtn" class="btn btn-ghost" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+          <span id="toggleViewLabel">Récapitulatif annuel</span>
+        </button>
       </div>
     </div>
 
+    <!-- body -->
     <div class="body">
+      <!-- vue 1 : parser un don -->
       <div id="parserSection" class="preview">
-        <div class="section-title" style="border-top:none;margin-top:0">PARSER UN DON</div>
+        <div class="section-title" style="border-top:none;margin-top:0;">PARSER UN DON</div>
+
+      <!-- input paste -->
+      <div>
         <label for="raw">Coller le texte copié depuis Yapla</label>
         <textarea id="raw" placeholder="Collez ici les informations du donateur et du don Yapla..."></textarea>
-        <div style="margin-top:12px">
-          <button id="parseBtn" class="btn btn-primary">Parser</button>
-          <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli</button>
-          <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
-        </div>
+      </div>
 
-        <div style="margin-top:12px;text-align:center">
-          <a id="queueStatusLinkParser" href="#" style="font-size:12px;color:#666;text-decoration:underline">Voir les dons en attente (hors 8h-18h)</a>
+      <!-- parser control -->
+      <div class="controls" style="margin-top:12px">
+        <button id="parseBtn" class="btn btn-primary" title="Analyser le texte collé">Parser</button>
+        <div id="validationMsg" class="msg" style="display:none"></div>
+      </div>
+
+      <!-- preview -->
+      <div id="previewBox" style="display:none" aria-live="polite">
+        <div class="section-title">DON</div>
+        <div id="donFields"></div>
+
+        <div style="height:8px"></div>
+
+        <div class="section-title">DONATEUR</div>
+        <div id="donateurFields"></div>
+      </div>
+
+      <!-- buttons under preview -->
+      <div id="previewActions" class="preview-actions" style="display:none;">
+        <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
+        <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
+      </div>
+
+      <!-- success -->
+      <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
+        <div class="dot">✓</div>
+        <div class="text">As tu un autre don a parser ?</div>
+        <div class="success-actions">
+          <button id="anotherBtn" class="btn btn-ghost">Oui</button>
+          <button id="finishBtn" class="btn btn-ghost">Fermer l'onglet</button>
         </div>
       </div>
 
-      <div id="annualSection" class="preview" style="display:none">
-        <div class="section-title" style="border-top:none;margin-top:0">RÉCAPITULATIF ANNUEL (REÇU ANNUEL)</div>
-        <label for="donorSelect">Choisir le donateur :</label>
-        <select id="donorSelect"></select>
-        <label for="annualYear">Année :</label>
-        <select id="annualYear"></select>
-        <div style="margin-top:12px">
+      </div>
+      <!-- fin vue 1 -->
+
+      <!-- vue 2 : SECTION REÇU FISCAL ANNUEL (RÉCAPITULATIF) -->
+      <div id="annualSection" class="preview" style="display:none;">
+        <div class="section-title" style="border-top:none;margin-top:0;">RÉCAPITULATIF ANNUEL (REÇU ANNUEL)</div>
+        <div class="controls">
+          <div style="flex:1; min-width:200px;">
+            <label for="donorSelect">Choisir le donateur :</label>
+            <div class="dselect-wrap">
+              <select id="donorSelect" class="dselect-native" tabindex="-1">
+                <option value="">Chargement des donateurs...</option>
+              </select>
+              <button type="button" class="btn btn-ghost dselect-trigger" style="justify-content:space-between; text-align:left;">
+                <div class="dselect-label">Chargement des donateurs...</div>
+                <svg class="dselect-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="dselect-list" role="listbox"></div>
+            </div>
+          </div>
+          <div style="width:140px;">
+            <label for="annualYear">Année :</label>
+            <div class="dselect-wrap">
+              <select id="annualYear" class="dselect-native" tabindex="-1">
+                <!-- Les années seront générées automatiquement -->
+              </select>
+              <button type="button" class="btn btn-ghost dselect-trigger" style="justify-content:space-between;">
+                <div class="dselect-label">--</div>
+                <svg class="dselect-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="dselect-list" role="listbox"></div>
+            </div>
+          </div>
+        </div>
+        <div class="controls" style="margin-top:12px;">
           <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif</button>
           <button id="generatePdfBtn" class="btn btn-primary" disabled>Générer & Envoyer le Reçu Fiscal Annuel (PDF)</button>
         </div>
+        <div id="annualOutput" style="margin-top:12px; display:none;"></div>
+        <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
 
-        <div style="margin-top:12px;text-align:center">
-          <a id="queueStatusLink" href="#" style="font-size:12px;color:#666;text-decoration:underline">Voir les dons en attente (hors 8h-18h)</a>
+        <div style="margin-top:14px; text-align:center;">
+          <a id="queueStatusLink" href="#" target="_blank" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
         </div>
       </div>
+      <!-- fin vue 2 -->
+
     </div>
   </div>
 
 <script>
-/* === CONFIG === */
-/* METS ICI L'URL DE TON DEPLOIEMENT WEB APPSCRIPT */
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec";
-const API_TOKEN = "b1a5caaf329bef0a5698361de58df201";
+/* Configuration */
+const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
+const mapping = {
+  prenom: 'entry.804774151',
+  nom: 'entry.1947114094',
+  email: 'entry.81735574',
+  adresse: 'entry.1914487624',
+  code_postal: 'entry.1544391775',
+  ville: 'entry.1912325143',
+  pays: 'entry.1171780890',
+  montant: 'entry.1174142672',
+  date_creation: 'entry.163110140',
+  mode_paiement: 'entry.879040345'
+};
 
-/* Elements */
-const openYaplaBtn = document.getElementById("openYaplaBtn");
-const toggleViewBtn = document.getElementById("toggleViewBtn");
-const toggleViewLabel = document.getElementById("toggleViewLabel");
-const parserSection = document.getElementById("parserSection");
-const annualSection = document.getElementById("annualSection");
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec';
 
-const queueStatusLink = document.getElementById("queueStatusLink");
-const queueStatusLinkParser = document.getElementById("queueStatusLinkParser");
+// Jeton partagé : DOIT être identique à la constante TOKEN_PARTAGE du script Apps Script.
+// Envoyé à chaque appel pour empêcher un tiers d'interroger le script sans passer par cet outil.
+const API_TOKEN = 'b1a5caaf329bef0a5698361de58df201';
 
-/* keep yapla button as before */
-const YAPLA_URL = "https://s2.yapla.com/donation/fr/campaign/list";
+const rawEl = document.getElementById('raw');
+const parseBtn = document.getElementById('parseBtn');
+const prefillBtn = document.getElementById('prefillBtn');
+const submitBtn = document.getElementById('submitBtn');
+const validationMsg = document.getElementById('validationMsg');
+const previewBox = document.getElementById('previewBox');
+const previewActions = document.getElementById('previewActions');
+const donFields = document.getElementById('donFields');
+const donateurFields = document.getElementById('donateurFields');
+
+const successBox = document.getElementById('successBox');
+const anotherBtn = document.getElementById('anotherBtn');
+const finishBtn = document.getElementById('finishBtn');
+
+const donorSelect = document.getElementById('donorSelect');
+const annualYear = document.getElementById('annualYear');
+const generateAnnualBtn = document.getElementById('generateAnnualBtn');
+const annualOutput = document.getElementById('annualOutput');
+
+const generatePdfBtn = document.getElementById('generatePdfBtn');
+const pdfOutput = document.getElementById('pdfOutput');
+
+const toggleViewBtn = document.getElementById('toggleViewBtn');
+const toggleViewLabel = document.getElementById('toggleViewLabel');
+const parserSection = document.getElementById('parserSection');
+const annualSection = document.getElementById('annualSection');
+
+const openYaplaBtn = document.getElementById('openYaplaBtn');
+const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
+// Référence gardée pour pouvoir refermer l'onglet Yapla en même temps que
+// celui-ci (uniquement possible pour un onglet ouvert via window.open depuis
+// cette page - un onglet ouvert autrement ne peut pas être fermé par script).
 let yaplaWindow = null;
-openYaplaBtn.addEventListener("click", () => { yaplaWindow = window.open(YAPLA_URL, "_blank"); });
 
-/* --- minimal parsing / other logic (you already have this in your page). 
-   For brevity I only include the queue-related parts here (modal + actions). */
-
-/* helper to escape html in inserted strings */
-function escapeHtml(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-
-/* Fetch the queue (JSON) from server */
-async function fetchQueueJson(){
-  const url = `${SCRIPT_URL}?action=queue_json&token=${encodeURIComponent(API_TOKEN)}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Erreur réseau");
-  return res.json();
-}
-
-/* Force-send an item (POST) */
-async function postForceSend(id){
-  const res = await fetch(SCRIPT_URL, {
-    method: "POST",
-    body: new URLSearchParams({ action: "force_send", id: id, token: API_TOKEN })
-  });
-  return res.json();
-}
-
-/* Build modal listing queue items and attach per-item force-send button */
-function buildQueueModal(items){
-  const overlay = document.createElement("div");
-  overlay.className = "modal-overlay";
-
-  const box = document.createElement("div");
-  box.className = "modal-box";
-  overlay.appendChild(box);
-
-  const title = document.createElement("h3");
-  title.textContent = "Éléments en attente";
-  box.appendChild(title);
-
-  // summary counts
-  const total = items.length;
-  const donations = items.filter(i=>i.type==="don").length;
-  const recaps = items.filter(i=>i.type==="recu_pdf").length;
-  const summary = document.createElement("div");
-  summary.style.fontWeight = "700";
-  summary.style.marginBottom = "8px";
-  summary.textContent = `Total ${total} — Dons: ${donations} — Récaps: ${recaps}`;
-  box.appendChild(summary);
-
-  if (!items || items.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = "empty";
-    empty.textContent = "Aucun élément en attente.";
-    box.appendChild(empty);
-    return overlay;
-  }
-
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  thead.innerHTML = "<tr><th>Type</th><th>Donateur / Détails</th><th>Email</th><th>Montant / Nb</th><th>Prévu le</th><th>Action</th></tr>";
-  table.appendChild(thead);
-  const tbody = document.createElement("tbody");
-
-  items.forEach(item=>{
-    const tr = document.createElement("tr");
-    const typeLabel = item.type === "recu_pdf" ? "Reçu annuel" : "Don";
-    const badgeClass = item.type==="recu_pdf" ? "badge-recap" : "badge-don";
-    const details = item.type==="recu_pdf" ? `${item.donor||""} (${item.year||""})` : (item.fields ? `${item.fields.prenom||""} ${item.fields.nom||""}` : "");
-    const email = item.type==="recu_pdf" ? (item.email||"-") : ((item.fields && item.fields.email) || "-");
-    const montant = item.type==="recu_pdf" ? "-" : ((item.fields && item.fields.montant) || "-");
-    let when = "-";
-    try { when = new Date(item.sendAfter).toLocaleString("fr-FR", { timeZone: "Europe/Paris", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" }); } catch(e){}
-
-    tr.innerHTML = `<td><span class="badge ${badgeClass}">${escapeHtml(typeLabel)}</span></td>
-                    <td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(details)}</td>
-                    <td>${escapeHtml(email)}</td>
-                    <td>${escapeHtml(String(montant))}</td>
-                    <td>${escapeHtml(when)}</td>
-                    <td style="text-align:right"></td>`;
-
-    const actionCell = tr.querySelector("td:last-child");
-    const btn = document.createElement("button");
-    btn.className = "btn btn-primary";
-    btn.textContent = "Envoyer maintenant";
-    btn.addEventListener("click", async () => {
-      if (!confirm("Envoyer maintenant cet élément ?")) return;
-      btn.disabled = true;
-      const original = btn.textContent;
-      btn.textContent = "...";
-      try {
-        const data = await postForceSend(item.id);
-        if (data.error) {
-          alert("Erreur : " + data.error);
-          btn.disabled = false;
-          btn.textContent = original;
-          return;
-        }
-        // remove row on success
-        tr.parentNode.removeChild(tr);
-      } catch (e) {
-        alert("Erreur réseau lors de l'envoi.");
-        btn.disabled = false;
-        btn.textContent = original;
-      }
-    });
-    actionCell.appendChild(btn);
-
-    if (item.lastError) {
-      const errDiv = document.createElement("div");
-      errDiv.style.color = "#a00";
-      errDiv.style.fontSize = "12px";
-      errDiv.textContent = "Erreur précédente : " + item.lastError;
-      tr.querySelector("td:nth-child(2)").appendChild(errDiv);
-    }
-
-    tbody.appendChild(tr);
-  });
-
-  table.appendChild(tbody);
-  box.appendChild(table);
-
-  return overlay;
-}
-
-/* Show modal: fetch queue then build modal */
-async function showQueueModal(){
-  const loading = document.createElement("div");
-  loading.className = "modal-overlay";
-  const loadingBox = document.createElement("div"); loadingBox.className = "modal-box";
-  loadingBox.innerHTML = `<div style="font-weight:700;padding:12px">Chargement de la file d'attente...</div>`;
-  loading.appendChild(loadingBox);
-  document.body.appendChild(loading);
-
-  try {
-    const items = await fetchQueueJson();
-    document.body.removeChild(loading);
-    const modal = buildQueueModal(items);
-    document.body.appendChild(modal);
-  } catch (e) {
-    document.body.removeChild(loading);
-    alert("Erreur lors de la récupération de la file : " + (e.message || e));
-  }
-}
-
-/* Attach link handlers (prevent navigation) */
-if (queueStatusLink) { queueStatusLink.addEventListener("click", e=>{ e.preventDefault(); showQueueModal(); }); }
-if (queueStatusLinkParser) { queueStatusLinkParser.addEventListener("click", e=>{ e.preventDefault(); showQueueModal(); }); }
-
-/* Toggle between parser and annual views */
-let showingAnnual = false;
-toggleViewBtn.addEventListener("click", ()=> {
-  showingAnnual = !showingAnnual;
-  parserSection.style.display = showingAnnual ? "none" : "block";
-  annualSection.style.display = showingAnnual ? "block" : "none";
-  toggleViewLabel.textContent = showingAnnual ? "Parser un don" : "Récapitulatif annuel";
+openYaplaBtn.addEventListener('click', () => {
+  yaplaWindow = window.open(YAPLA_URL, '_blank');
 });
 
-/* update the link text with a count (calls queue_count) */
-async function refreshQueueCount(){
+function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
+function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
+
+// Échappe le texte avant de l'insérer via innerHTML, pour qu'un champ contenant
+// des caractères type < > & " ne casse pas l'affichage (ou pire).
+function escapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+// Construit un menu déroulant personnalisé au-dessus d'un <select> natif caché.
+// Le <select> reste la source de vérité (value, événement "change"), donc tout
+// le reste du code (lecture de .value, addEventListener('change', ...),
+// innerHTML pour peupler les options) continue de fonctionner sans changement.
+function enhanceDselect(selectEl) {
+  const wrap = selectEl.closest('.dselect-wrap');
+  if (!wrap) return;
+  const trigger = wrap.querySelector('.dselect-trigger');
+  const label = wrap.querySelector('.dselect-label');
+  const list = wrap.querySelector('.dselect-list');
+
+  function updateLabel() {
+    const selected = selectEl.options[selectEl.selectedIndex];
+    label.innerHTML = '';
+    if (selected) {
+      if (selected.dataset.name) {
+        const main = document.createElement('div');
+        main.className = 'dselect-option-main';
+        main.textContent = selected.dataset.name;
+        label.appendChild(main);
+        if (selected.dataset.email) {
+          const sub = document.createElement('div');
+          sub.className = 'dselect-option-sub';
+          sub.textContent = selected.dataset.email;
+          label.appendChild(sub);
+        }
+      } else {
+        label.textContent = selected.textContent;
+      }
+    }
+  }
+
+  function render() {
+    list.innerHTML = '';
+    Array.from(selectEl.options).forEach((opt) => {
+      const item = document.createElement('div');
+      item.className = 'dselect-option' + (opt.value === selectEl.value ? ' active' : '');
+      item.setAttribute('role', 'option');
+      if (opt.dataset.name) {
+        const main = document.createElement('div');
+        main.className = 'dselect-option-main';
+        main.textContent = opt.dataset.name;
+        item.appendChild(main);
+        if (opt.dataset.email) {
+          const sub = document.createElement('div');
+          sub.className = 'dselect-option-sub';
+          sub.textContent = opt.dataset.email;
+          item.appendChild(sub);
+        }
+      } else {
+        item.textContent = opt.textContent;
+      }
+      item.addEventListener('click', () => {
+        selectEl.value = opt.value;
+        selectEl.dispatchEvent(new Event('change'));
+        updateLabel();
+        close();
+      });
+      list.appendChild(item);
+    });
+    updateLabel();
+  }
+
+  function open() {
+    render();
+    list.classList.add('open');
+    wrap.classList.add('open');
+  }
+  function close() {
+    list.classList.remove('open');
+    wrap.classList.remove('open');
+  }
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (list.classList.contains('open')) close(); else open();
+  });
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
+
+  // Exposé pour que le code existant puisse rafraîchir l'affichage après
+  // avoir repeuplé le <select> natif (ex: donorSelect.innerHTML = ...).
+  selectEl._dselectRefresh = render;
+  render();
+}
+
+function refreshDselect(selectEl) {
+  if (selectEl._dselectRefresh) selectEl._dselectRefresh();
+}
+
+function initYearSelect() {
+  const currentYear = new Date().getFullYear();
+  annualYear.innerHTML = '';
+  for (let y = currentYear; y >= currentYear - 3; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) {
+      opt.selected = true;
+    }
+    annualYear.appendChild(opt);
+  }
+  refreshDselect(annualYear);
+}
+
+function normalizeAmount(raw){
+  if(!raw) return '';
+  let s = String(raw).replace(/\u00A0/g,' ').trim();
+  s = s.replace(/\s/g,'');
+  s = s.replace(/[^\d,.\-]/g,'');
+  if(!s) return '';
+  if(s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
+  if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
+  return s;
+}
+
+function parseDateToYYYYMMDD(raw){
+  if(!raw) return '';
+  raw = String(raw).trim();
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+  if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+  return '';
+}
+
+function isoToDDMMYYYY(iso){
+  if(!iso) return '';
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return '';
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+async function loadDonorsFromSheet() {
+  try {
+    const response = await fetch(`${SCRIPT_URL}?action=donors&token=${encodeURIComponent(API_TOKEN)}`);
+    const donors = await response.json();
+    
+    const filteredDonors = donors.filter(d => {
+      const nom = (d.nom || '').trim();
+      const prenom = (d.prenom || '').trim();
+      
+      if (!nom) return false;
+      
+      const nomUpper = nom.toUpperCase();
+      const prenomUpper = prenom.toUpperCase();
+      
+      if (nomUpper === 'TEST' || nomUpper.includes('NOM POUR AUTOCRAT')) return false;
+      if (nomUpper === 'NOM' && prenomUpper === 'PRENOM') return false;
+      
+      return true;
+    });
+
+    filteredDonors.sort((a, b) => {
+      const nomA = (a.nom || '').trim().toUpperCase();
+      const nomB = (b.nom || '').trim().toUpperCase();
+      if (nomA !== nomB) return nomA.localeCompare(nomB);
+      const preA = (a.prenom || '').trim().toUpperCase();
+      const preB = (b.prenom || '').trim().toUpperCase();
+      return preA.localeCompare(preB);
+    });
+    
+    donorSelect.innerHTML = '<option value="">-- Sélectionnez un donateur --</option>';
+    filteredDonors.forEach(d => {
+      const key = `${d.nom} ${d.prenom}`.trim().toUpperCase();
+      const opt = document.createElement('option');
+      opt.value = key;
+      const nameText = `${d.nom} ${d.prenom}`;
+      const emailText = d.email ? d.email : 'Pas d\'email';
+      opt.textContent = `${nameText} — ${emailText}`;
+      opt.dataset.name = nameText;
+      opt.dataset.email = emailText;
+      donorSelect.appendChild(opt);
+    });
+    refreshDselect(donorSelect);
+  } catch (e) {
+    donorSelect.innerHTML = '<option value="">Erreur de chargement des donateurs</option>';
+    refreshDselect(donorSelect);
+  }
+}
+
+function parseYapla(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const data = {};
+  const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
+  for(let i=0;i<lines.length;i++){
+    const L = lines[i];
+    for(const lab of labels){
+      if(L.toLowerCase() === lab.toLowerCase()){
+        const val = (lines[i+1] || '').trim();
+        if(val){
+          const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
+          data[key] = val;
+        }
+      }
+    }
+    const email = L.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if(email) data.courriel = email[0];
+    const montant = L.match(/(\d+[,.]\d{2}\s*€)|(\d+[,.]?\d*\s*€)/);
+    if(montant) data.montant = montant[0];
+    const cp = L.match(/\b\d{5}\b/);
+    if(cp) data.code_postal = cp[0];
+    const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
+    if(phone) data.telephone = phone[0].replace(/\s+/g,'');
+  }
+  if((!data.prenom || !data.nom) && lines[0]){
+    const first = lines[0].split(/\s+/);
+    if(first.length>=2){
+      if(!data.prenom) data.prenom = first[0];
+      if(!data.nom) data.nom = first.slice(1).join(' ');
+    }
+  }
+  const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
+  const date_iso = parseDateToYYYYMMDD(date_raw) || '';
+  const date_display = isoToDDMMYYYY(date_iso);
+  return {
+    prenom: data.prenom || '',
+    nom: data.nom || '',
+    email: data.courriel || '',
+    adresse: data.adresse || '',
+    ville: data.ville || '',
+    code_postal: data.code_postal || '',
+    pays: data.pays || '',
+    montant: normalizeAmount(data.montant || ''),
+    date_iso: date_iso,
+    date_display: date_display
+  };
+}
+
+function renderPreview(parsed){
+  donFields.innerHTML = '';
+  donateurFields.innerHTML = '';
+
+  const donEntries = [
+    ['MONTANT', parsed.montant || ''],
+    ['DATE', parsed.date_display || ''],
+    ['MODE DE VERSEMENT', 'Carte bancaire']
+  ];
+  for(const [label, value] of donEntries){
+    const row = document.createElement('div');
+    row.className = 'field';
+    row.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div>`;
+    donFields.appendChild(row);
+  }
+
+  const spacer = document.createElement('div');
+  spacer.style.height = '6px';
+  donFields.appendChild(spacer);
+
+  const donorEntries = [
+    ['NOM', parsed.nom || ''],
+    ['PRENOM', parsed.prenom || ''],
+    ['ADRESSE', parsed.adresse || ''],
+    ['CODE POSTAL', parsed.code_postal || ''],
+    ['VILLE', parsed.ville || ''],
+    ['PAYS', parsed.pays || ''],
+    ['ADRESSE MAIL', parsed.email || '']
+  ];
+  for(const [label, value] of donorEntries){
+    const row = document.createElement('div');
+    row.className = 'field';
+    row.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div>`;
+    donateurFields.appendChild(row);
+  }
+}
+
+function canParse(){
+  const raw = rawEl.value.trim();
+  if(!raw){ showMsg("Veuillez coller d'abord le texte Yapla."); return false; }
+  clearMsg(); return true;
+}
+
+let lastParsed = null;
+
+parseBtn.addEventListener('click', () => {
+  if(!canParse()) return;
+  const txt = rawEl.value;
+  const parsed = parseYapla(txt);
+  lastParsed = parsed;
+  renderPreview(parsed);
+  previewBox.style.display = 'block';
+  previewActions.style.display = 'flex';
+  prefillBtn.disabled = false;
+  submitBtn.disabled = false;
+  clearMsg();
+});
+
+function buildPrefillURL(parsed){
+  const params = new URLSearchParams();
+  if(parsed.prenom) params.set(mapping.prenom, parsed.prenom);
+  if(parsed.nom) params.set(mapping.nom, parsed.nom);
+  if(parsed.email) params.set(mapping.email, parsed.email);
+  if(parsed.adresse) params.set(mapping.adresse, parsed.adresse);
+  if(parsed.code_postal) params.set(mapping.code_postal, parsed.code_postal);
+  if(parsed.ville) params.set(mapping.ville, parsed.ville);
+  if(parsed.pays) params.set(mapping.pays, parsed.pays);
+  if(parsed.montant) params.set(mapping.montant, parsed.montant);
+  if(parsed.date_iso) params.set(mapping.date_creation, parsed.date_iso);
+  params.set(mapping.mode_paiement, 'Carte bancaire');
+  const viewBase = formAction.replace('/formResponse','/viewform');
+  return viewBase + '?usp=pp_url&' + params.toString();
+}
+
+prefillBtn.addEventListener('click', () => {
+  if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
+  clearMsg();
+  const url = buildPrefillURL(lastParsed);
+  window.open(url, '_blank');
+});
+
+submitBtn.addEventListener('click', async () => {
+  if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
+  clearMsg();
+
+  submitBtn.disabled = true;
+  parseBtn.disabled = true;
+  prefillBtn.disabled = true;
+  rawEl.disabled = true;
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: new URLSearchParams({
+        action: 'submit_don',
+        token: API_TOKEN,
+        prenom: lastParsed.prenom || '',
+        nom: lastParsed.nom || '',
+        email: lastParsed.email || '',
+        adresse: lastParsed.adresse || '',
+        code_postal: lastParsed.code_postal || '',
+        ville: lastParsed.ville || '',
+        pays: lastParsed.pays || '',
+        montant: lastParsed.montant || '',
+        date_creation: lastParsed.date_iso || '',
+        mode_paiement: 'Carte bancaire'
+      })
+    });
+    const data = await response.json();
+
+    if (data.error) {
+      showMsg(data.error);
+      submitBtn.disabled = false;
+      parseBtn.disabled = false;
+      prefillBtn.disabled = false;
+      rawEl.disabled = false;
+      return;
+    }
+
+    showSuccess(data);
+  } catch (e) {
+    showMsg('Erreur réseau lors de la soumission. Réessaie.');
+    submitBtn.disabled = false;
+    parseBtn.disabled = false;
+    prefillBtn.disabled = false;
+    rawEl.disabled = false;
+  }
+});
+
+// data.status vaut "SENT" (envoyé tout de suite, entre 8h et 18h) ou "QUEUED"
+// (mis en attente côté script, hors de cette tranche horaire).
+function showSuccess(data) {
+  const text = successBox.querySelector('.text');
+  text.textContent = (data && data.status === 'QUEUED')
+    ? `Hors horaires (8h-18h) : ce don sera transmis automatiquement le ${data.send_after_display || 'prochain créneau de 8h'}. As-tu un autre don à parser ?`
+    : 'Don transmis. As-tu un autre don à parser ?';
+  successBox.style.display = 'flex';
+  successBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  if (data && data.status === 'QUEUED') refreshQueueCount();
+}
+
+anotherBtn.addEventListener('click', () => {
+  rawEl.value = '';
+  lastParsed = null;
+  previewBox.style.display = 'none';
+  previewActions.style.display = 'none';
+  donFields.innerHTML = '';
+  donateurFields.innerHTML = '';
+  successBox.style.display = 'none';
+  submitBtn.disabled = true;
+  prefillBtn.disabled = true;
+  parseBtn.disabled = false;
+  rawEl.disabled = false;
+  clearMsg();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  rawEl.focus();
+  loadDonorsFromSheet();
+});
+
+finishBtn.addEventListener('click', () => {
+  if (yaplaWindow && !yaplaWindow.closed) {
+    yaplaWindow.close();
+  }
+  window.close();
+  setTimeout(() => {
+    successBox.querySelector('.text').textContent = 'Tu peux fermer cet onglet manuellement.';
+    anotherBtn.style.display = 'none';
+    finishBtn.style.display = 'none';
+  }, 300);
+});
+
+generateAnnualBtn.addEventListener('click', async () => {
+  const selectedKey = donorSelect.value;
+  const year = annualYear.value;
+
+  if(!selectedKey) {
+    alert('Veuillez sélectionner un donateur.');
+    return;
+  }
+
+  generateAnnualBtn.disabled = true;
+  generatePdfBtn.disabled = true;
+  annualOutput.style.display = 'block';
+  annualOutput.innerHTML = `<div style="padding:8px;">Recherche en cours dans Google Sheets...</div>`;
+
+  try {
+    const url = `${SCRIPT_URL}?action=annual&donor=${encodeURIComponent(selectedKey)}&year=${encodeURIComponent(year)}&token=${encodeURIComponent(API_TOKEN)}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if(data.error) {
+      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">${escapeHtml(data.error)}</div>`;
+      return;
+    }
+
+    if(data.count === 0) {
+      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Aucun don trouvé pour ce donateur en ${escapeHtml(year)}.</div>`;
+      return;
+    }
+
+    const s = data.sample;
+    annualOutput.innerHTML = `
+      <div style="border:1px solid var(--black); padding:12px; border-radius:4px; background:var(--input-bg);">
+        <div style="font-weight:900; margin-bottom:8px; font-size:14px;">RÉCAPITULATIF ANNUEL DE DONS (${escapeHtml(year)})</div>
+        <div class="field"><div class="label">Donateur :</div><div class="value">${escapeHtml(s.nom)} ${escapeHtml(s.prenom)}</div></div>
+        <div class="field"><div class="label">Adresse :</div><div class="value">${[escapeHtml(s.adresse || '-'), [escapeHtml(s.code_postal || ''), escapeHtml(s.ville || '')].filter(Boolean).join(' ')].filter(Boolean).join('<br>')}</div></div>
+        <div class="field"><div class="label">Nombre total de dons :</div><div class="value">${escapeHtml(data.count)}</div></div>
+        <div class="field"><div class="label">MONTANT TOTAL CUMULÉ :</div><div class="value" style="font-size:15px;">${escapeHtml(data.total)} €</div></div>
+        <div style="margin-top:12px; font-size:12px; font-weight:700;">Ce récapitulatif annuel peut maintenant être édité ou transmis au donateur.</div>
+      </div>
+    `;
+    generatePdfBtn.disabled = false;
+  } catch(e) {
+    annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Erreur lors de la récupération des données.</div>`;
+  } finally {
+    generateAnnualBtn.disabled = false;
+  }
+});
+
+// Affiche une modal (dans le style noir/blanc de l'outil) pour choisir l'email
+// de destination. Résout avec l'email choisi, ou null si annulé.
+function askEmailChoice(sortedEmails, selectedKey, year){
+  return new Promise((resolve) => {
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-box';
+
+    let optionsHtml = '';
+    sortedEmails.forEach((email, index) => {
+      const badge = (index === 0) ? " (le plus récent)" : "";
+      const isSelected = (index === 0) ? "selected" : "";
+      optionsHtml += `<option value="${escapeHtml(email)}" ${isSelected}>${escapeHtml(email)}${escapeHtml(badge)}</option>`;
+    });
+
+    modalContent.innerHTML = `
+      <h3>Envoyer le reçu — ${escapeHtml(selectedKey)} (${escapeHtml(year)})</h3>
+      <p>Sélectionne l'adresse e-mail du destinataire :</p>
+      <select id="modalEmailSelect">${optionsHtml}</select>
+      <div class="modal-actions">
+        <button id="modalCancel" class="btn btn-ghost" type="button">Annuler</button>
+        <button id="modalConfirm" class="btn btn-primary" type="button">Envoyer</button>
+      </div>
+    `;
+
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    document.getElementById('modalConfirm').addEventListener('click', () => {
+      const val = document.getElementById('modalEmailSelect').value;
+      document.body.removeChild(modalOverlay);
+      resolve(val);
+    });
+
+    document.getElementById('modalCancel').addEventListener('click', () => {
+      document.body.removeChild(modalOverlay);
+      resolve(null);
+    });
+  });
+}
+
+generatePdfBtn.addEventListener('click', async () => {
+  const selectedKey = donorSelect.value;
+  const year = annualYear.value;
+
+  if(!selectedKey) {
+    alert('Veuillez sélectionner un donateur.');
+    return;
+  }
+
+  generatePdfBtn.disabled = true;
+  pdfOutput.style.display = 'block';
+  pdfOutput.innerHTML = `<div style="padding:8px;">Récupération des adresses e-mail du donateur...</div>`;
+
+  try {
+    const resEmails = await fetch(`${SCRIPT_URL}?action=get_donor_emails&donor=${encodeURIComponent(selectedKey)}&token=${encodeURIComponent(API_TOKEN)}`);
+    const dataEmails = await resEmails.json();
+
+    let targetEmail = '';
+
+    if (dataEmails.emails && dataEmails.emails.length > 0) {
+      let sortedEmails = [...dataEmails.emails];
+      if (dataEmails.default_email) {
+        sortedEmails = [
+          dataEmails.default_email, 
+          ...sortedEmails.filter(e => e !== dataEmails.default_email)
+        ];
+      }
+
+      targetEmail = await askEmailChoice(sortedEmails, selectedKey, year);
+
+      if (!targetEmail) {
+        pdfOutput.style.display = 'none';
+        return;
+      }
+
+    } else {
+      let manualEmail = prompt("Aucune adresse e-mail trouvée dans l'historique. Entrez une adresse e-mail pour l'envoi :");
+      if (!manualEmail) {
+        pdfOutput.style.display = 'none';
+        return;
+      }
+      targetEmail = manualEmail.trim();
+    }
+
+    pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${escapeHtml(targetEmail)} en cours...</div>`;
+
+    // Envoyé en POST (plutôt qu'en GET) car cette action a un effet de bord
+    // (création de fichier + envoi d'email) : ça évite qu'un simple
+    // pré-chargement de lien ou un historique de navigateur ne la redéclenche.
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: new URLSearchParams({
+        action: 'generate_pdf',
+        donor: selectedKey,
+        year: year,
+        email: targetEmail,
+        token: API_TOKEN
+      })
+    });
+    const data = await response.json();
+
+    if(data.status === "SUCCESS") {
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré, sauvegardé et envoyé à ${escapeHtml(targetEmail)} ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
+    } else if (data.status === "QUEUED") {
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Hors horaires (8h-18h) : le reçu sera généré et envoyé à ${escapeHtml(targetEmail)} le ${escapeHtml(data.send_after_display || 'prochain créneau de 8h')}.</div>`;
+      refreshQueueCount();
+    } else {
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${escapeHtml(data.error || 'Impossible de générer le PDF')}</div>`;
+    }
+  } catch(e) {
+    pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur réseau lors du traitement.</div>`;
+  } finally {
+    generatePdfBtn.disabled = false;
+  }
+});
+
+let showingAnnual = false;
+toggleViewBtn.addEventListener('click', () => {
+  showingAnnual = !showingAnnual;
+  parserSection.style.display = showingAnnual ? 'none' : 'block';
+  annualSection.style.display = showingAnnual ? 'block' : 'none';
+  toggleViewLabel.textContent = showingAnnual ? 'Parser un don' : 'Récapitulatif annuel';
+});
+
+// Le bouton "Envoyer le Reçu Fiscal Annuel" ne devient actif qu'après un
+// récapitulatif généré avec succès pour le donateur/année en cours. Tout
+// changement de sélection invalide ce récapitulatif pour éviter d'envoyer
+// un reçu qui ne correspond plus à ce qui a été vérifié à l'écran.
+donorSelect.addEventListener('change', () => {
+  generatePdfBtn.disabled = true;
+  annualOutput.style.display = 'none';
+});
+annualYear.addEventListener('change', () => {
+  generatePdfBtn.disabled = true;
+  annualOutput.style.display = 'none';
+});
+
+enhanceDselect(donorSelect);
+enhanceDselect(annualYear);
+initYearSelect();
+loadDonorsFromSheet();
+
+const queueStatusLink = document.getElementById('queueStatusLink');
+queueStatusLink.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
+
+// Met à jour le nombre affiché entre parenthèses à côté du lien "Voir les dons en attente".
+async function refreshQueueCount() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=queue_count&token=${encodeURIComponent(API_TOKEN)}`);
     const data = await res.json();
-    const total = data.count || 0;
-    const txt = `Voir les dons en attente (hors 8h-18h)${total>0?(" ("+total+")"):""}`;
-    if (queueStatusLink) queueStatusLink.textContent = txt;
-    if (queueStatusLinkParser) queueStatusLinkParser.textContent = txt;
-  } catch(e){ /* silent */ }
+    const n = data.count || 0;
+    queueStatusLink.textContent = `Voir les dons en attente (hors 8h-18h)${n > 0 ? ' (' + n + ')' : ''}`;
+  } catch (e) {
+    // Silencieux : ce n'est qu'un compteur indicatif, pas une donnée critique.
+  }
 }
 refreshQueueCount();
-
-/* Note: ton code de parsing, prefill, submit, annual generation, etc. doit être
-   inséré ici ou conservé comme auparavant ; j'ai fourni et stabilisé la logique
-   de la modal + force send. */
 </script>
 </body>
 </html>
