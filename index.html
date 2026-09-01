@@ -5,7 +5,7 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* (tout le CSS inchangé — laissé tel quel pour la clarté) */
+    /* Palette noir/blanc + gris d'arrière-plan, pas de container bordé */
     :root{
       --page-bg: #e6e6e6;
       --header-bg: #d9d9d9;
@@ -14,35 +14,79 @@
       --max-w: 920px;
       --yapla-orange: #f59e0b;
     }
+
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    .centered { max-width: var(--max-w); margin:28px auto; padding:0 12px 28px 12px; box-sizing:border-box; }
-    .header-banner{ background:var(--header-bg); padding:16px 18px; display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap; border-radius:6px; box-sizing:border-box; }
+    .centered { 
+      max-width: var(--max-w); 
+      margin:28px auto;         
+      padding:0 12px 28px 12px;   
+      box-sizing:border-box; 
+    }
+
+    .header-banner{
+      background:var(--header-bg);
+      padding:16px 18px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      border-radius:6px;
+      box-sizing:border-box;
+    }
     .header-left{display:flex;flex-direction:column;gap:6px}
     .header-title{font-size:18px;margin:0;font-weight:900;color:var(--black)}
     .header-actions { display:flex; gap:8px; align-items:center; }
     .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
     #toggleViewBtn { min-width:195px; justify-content:center; }
+
     .body{padding:16px 0 0 0;background:transparent}
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
     textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
-    .btn{ padding:8px 12px; border-radius:2px; border:2px solid var(--black); background: var(--input-bg); color: var(--black); font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; }
+
+    .btn{
+      padding:8px 12px;
+      border-radius:2px;
+      border:2px solid var(--black);
+      background: var(--input-bg);
+      color: var(--black);
+      font-weight:700;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-decoration:none;
+    }
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity:0.5; cursor:not-allowed; }
     .btn-primary{ background: var(--black); color: var(--input-bg); }
     .btn-ghost{ background: var(--input-bg); color: var(--black); }
+
+    /* Menu déroulant personnalisé (remplace le rendu système bleu des <select>) */
     .cs-wrapper{ position:relative; width:100%; }
     .cs-native{ position:absolute; opacity:0; pointer-events:none; height:0; width:0; margin:0; padding:0; border:0; }
     .cs-trigger{ width:100%; justify-content:space-between; text-align:left; }
     .cs-trigger .cs-caret{ flex-shrink:0; transition:transform .15s ease; }
     .cs-trigger.cs-open .cs-caret{ transform:rotate(180deg); }
     .cs-trigger .cs-trigger-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .cs-panel{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50; background:var(--input-bg); border:2px solid var(--black); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18); }
+    .cs-panel{
+      position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50;
+      background:var(--input-bg); border:2px solid var(--black); border-radius:4px;
+      max-height:240px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18);
+    }
     .cs-option{ padding:10px 12px; font-size:14px; font-weight:700; cursor:pointer; border-bottom:1px dashed var(--black); }
     .cs-option:last-child{ border-bottom:none; }
     .cs-option:hover, .cs-option:active{ background:var(--black); color:var(--input-bg); }
     .cs-option-selected{ background:var(--header-bg); }
-    .yapla-btn{ background: var(--yapla-orange); color: #fff; border-color: #b45309; }
+
+    .yapla-btn{
+      background: var(--yapla-orange);
+      color: #fff;
+      border-color: #b45309;
+    }
+
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px;letter-spacing:.3px}
     .field{padding:8px 0;border-bottom:1px dashed var(--black)}
@@ -54,18 +98,26 @@
     .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--input-bg);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
     .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
+
     .preview-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+    /* Modal de sélection d'email, dans le même style noir/blanc que le reste */
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;box-sizing:border-box}
     .modal-box{background:var(--input-bg);border:2px solid var(--black);border-radius:4px;padding:18px;max-width:400px;width:100%;box-sizing:border-box}
     .modal-box h3{margin:0 0 10px;font-size:16px;font-weight:900}
     .modal-box p{margin:0 0 12px;font-size:13px}
     .modal-box select{width:100%;padding:8px;margin-bottom:14px;border:1px solid var(--black);border-radius:2px;font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     .modal-actions{display:flex;justify-content:flex-end;gap:8px}
+
+    /* Menus déroulants personnalisés (le <select> natif reste caché pour
+       porter la valeur/les événements, la liste ouverte est dessinée par nous
+       pour éviter le rendu bleu du système sur mobile) */
     .dselect-wrap{position:relative;}
     .dselect-native{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     .dselect-trigger{width:100%;}
     .dselect-label{flex:1;min-width:0;overflow:hidden;text-align:left;}
-    .dselect-label .dselect-option-main, .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dselect-label .dselect-option-main,
+    .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .dselect-chevron{flex-shrink:0;transition:transform .15s ease;margin-left:auto;}
     .dselect-wrap.open .dselect-chevron{transform:rotate(180deg);}
     .dselect-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:var(--input-bg);border:2px solid var(--black);border-radius:4px;max-height:240px;overflow-y:auto;box-shadow:0 4px 10px rgba(0,0,0,0.2);}
@@ -76,6 +128,7 @@
     .dselect-option:hover .dselect-option-sub, .dselect-option.active .dselect-option-sub{color:#bfbfbf;}
     .dselect-option:last-child{border-bottom:none;}
     .dselect-option:hover, .dselect-option.active{background:var(--black);color:var(--input-bg);}
+
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
@@ -137,7 +190,7 @@
 
       <!-- lien vers la page de file d'attente (ajouté ici dans la vue Parser) -->
       <div style="margin-top:14px; text-align:center;">
-        <a id="queueStatusLinkParser" href="#" target="_blank" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
+        <a id="queueStatusLinkParser" href="#" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
       </div>
 
       <!-- success -->
@@ -192,7 +245,7 @@
         <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
 
         <div style="margin-top:14px; text-align:center;">
-          <a id="queueStatusLink" href="#" target="_blank" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
+          <a id="queueStatusLink" href="#" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
         </div>
       </div>
       <!-- fin vue 2 -->
@@ -219,7 +272,6 @@ const mapping = {
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec';
 
 // Jeton partagé : DOIT être identique à la constante TOKEN_PARTAGE du script Apps Script.
-// Envoyé à chaque appel pour empêcher un tiers d'interroger le script sans passer par cet outil.
 const API_TOKEN = 'b1a5caaf329bef0a5698361de58df201';
 
 const rawEl = document.getElementById('raw');
@@ -251,6 +303,9 @@ const annualSection = document.getElementById('annualSection');
 
 const openYaplaBtn = document.getElementById('openYaplaBtn');
 const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
+// Référence gardée pour pouvoir refermer l'onglet Yapla en même temps que
+// celui-ci (uniquement possible pour un onglet ouvert via window.open depuis
+// cette page - un onglet ouvert autrement ne peut pas être fermé par script).
 let yaplaWindow = null;
 
 openYaplaBtn.addEventListener('click', () => {
@@ -710,6 +765,8 @@ generateAnnualBtn.addEventListener('click', async () => {
   }
 });
 
+// Affiche une modal (dans le style noir/blanc de l'outil) pour choisir l'email
+// de destination. Résout avec l'email choisi, ou null si annulé.
 function askEmailChoice(sortedEmails, selectedKey, year){
   return new Promise((resolve) => {
     const modalOverlay = document.createElement('div');
@@ -797,6 +854,9 @@ generatePdfBtn.addEventListener('click', async () => {
 
     pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${escapeHtml(targetEmail)} en cours...</div>`;
 
+    // Envoyé en POST (plutôt qu'en GET) car cette action a un effet de bord
+    // (création de fichier + envoi d'email) : ça évite qu'un simple
+    // pré-chargement de lien ou un historique de navigateur ne la redéclenche.
     const response = await fetch(SCRIPT_URL, {
       method: 'POST',
       body: new URLSearchParams({
@@ -851,6 +911,173 @@ const queueStatusLinkParser = document.getElementById('queueStatusLinkParser');
 queueStatusLink.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
 if (queueStatusLinkParser) queueStatusLinkParser.href = queueStatusLink.href;
 
+// ----------------- Affichage local de la file d'attente (modal) -----------------
+async function fetchQueueJson() {
+  const url = `${SCRIPT_URL}?action=queue_json&token=${encodeURIComponent(API_TOKEN)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Erreur réseau');
+  return res.json();
+}
+
+function createQueueModal(items) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  box.style.maxWidth = '900px';
+  box.style.width = '100%';
+
+  // header
+  const title = document.createElement('h3');
+  title.textContent = 'Dons en attente';
+  title.style.marginTop = '0';
+  box.appendChild(title);
+
+  // close
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn btn-ghost';
+  closeBtn.textContent = 'Fermer';
+  closeBtn.style.marginBottom = '8px';
+  closeBtn.addEventListener('click', () => document.body.removeChild(overlay));
+  box.appendChild(closeBtn);
+
+  if (!items || items.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'Aucun élément en attente.';
+    box.appendChild(empty);
+    overlay.appendChild(box);
+    return overlay;
+  }
+
+  // table
+  const table = document.createElement('table');
+  table.style.width = '100%';
+  table.style.borderCollapse = 'collapse';
+  table.style.marginTop = '8px';
+
+  // head
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr style="background:#fafafa;font-weight:700;"><th style="padding:8px;border-bottom:1px solid #eee">Type</th><th style="padding:8px;border-bottom:1px solid #eee">Donateur / Détails</th><th style="padding:8px;border-bottom:1px solid #eee">Email</th><th style="padding:8px;border-bottom:1px solid #eee">Montant / Nb</th><th style="padding:8px;border-bottom:1px solid #eee">Prévu le</th><th style="padding:8px;border-bottom:1px solid #eee">Action</th></tr>';
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  items.forEach(function(item) {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #eee';
+    tr.style.verticalAlign = 'middle';
+
+    const typeLabel = (item.type === 'recu_pdf') ? 'Reçu annuel' : 'Don';
+    const details = item.type === 'recu_pdf' ? (item.donor || '') + ' (' + (item.year || '') + ')' : ((item.fields && ((item.fields.prenom || '') + ' ' + (item.fields.nom || ''))) || '');
+    const email = item.type === 'recu_pdf' ? (item.email || '-') : ((item.fields && item.fields.email) || '-');
+    const montant = item.type === 'recu_pdf' ? '-' : ((item.fields && item.fields.montant) || '-');
+    const when = (function() {
+      try {
+        return new Date(item.sendAfter).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+      } catch (e) {
+        return item.sendAfter || '-';
+      }
+    })();
+
+    tr.innerHTML = `
+      <td style="padding:8px">${escapeHtml(typeLabel)}</td>
+      <td style="padding:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px">${escapeHtml(details)}</td>
+      <td style="padding:8px">${escapeHtml(email)}</td>
+      <td style="padding:8px">${escapeHtml(String(montant))}</td>
+      <td style="padding:8px">${escapeHtml(when)}</td>
+      <td style="padding:8px;text-align:right"></td>
+    `;
+
+    const actionCell = tr.querySelector('td:last-child');
+    const forceBtn = document.createElement('button');
+    forceBtn.className = 'btn';
+    forceBtn.textContent = 'Envoyer maintenant';
+    forceBtn.addEventListener('click', function() {
+      if (!confirm('Envoyer maintenant cet élément ?')) return;
+      forceSend(item.id, tr, forceBtn);
+    });
+    actionCell.appendChild(forceBtn);
+
+    // show lastError if present
+    if (item.lastError) {
+      const errDiv = document.createElement('div');
+      errDiv.style.color = '#a00';
+      errDiv.style.marginTop = '6px';
+      errDiv.style.fontSize = '12px';
+      errDiv.textContent = 'Erreur précédente : ' + item.lastError;
+      const secondCell = tr.querySelector('td:nth-child(2)');
+      secondCell.appendChild(errDiv);
+    }
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  box.appendChild(table);
+  overlay.appendChild(box);
+  return overlay;
+}
+
+async function showQueueModal() {
+  // affiche modal de chargement
+  const loadingOverlay = document.createElement('div');
+  loadingOverlay.className = 'modal-overlay';
+  const loadingBox = document.createElement('div');
+  loadingBox.className = 'modal-box';
+  loadingBox.innerHTML = '<div style="padding:12px;font-weight:700">Chargement de la file d\\'attente...</div>';
+  loadingOverlay.appendChild(loadingBox);
+  document.body.appendChild(loadingOverlay);
+
+  try {
+    const items = await fetchQueueJson();
+    document.body.removeChild(loadingOverlay);
+
+    const modal = createQueueModal(items);
+    document.body.appendChild(modal);
+  } catch (e) {
+    document.body.removeChild(loadingOverlay);
+    alert('Erreur lors de la récupération de la file : ' + (e.message || e));
+  }
+}
+
+async function forceSend(id, rowElement, btn) {
+  try {
+    btn.disabled = true;
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: new URLSearchParams({ action: 'force_send', id: id, token: API_TOKEN })
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert('Erreur : ' + data.error);
+      btn.disabled = false;
+      return;
+    }
+    // suppression visuelle de la ligne
+    if (rowElement && rowElement.parentNode) {
+      rowElement.parentNode.removeChild(rowElement);
+    }
+    // mettre à jour le compteur global affiché (si présent)
+    refreshQueueCount();
+  } catch (e) {
+    alert('Erreur réseau lors de l\\'envoi.');
+    btn.disabled = false;
+  }
+}
+
+// Attache le listener aux liens existants (ne pas ouvrir un nouvel onglet)
+if (queueStatusLink) {
+  queueStatusLink.removeAttribute('target');
+  queueStatusLink.addEventListener('click', function(e){ e.preventDefault(); showQueueModal(); });
+}
+if (queueStatusLinkParser) {
+  queueStatusLinkParser.removeAttribute('target');
+  queueStatusLinkParser.addEventListener('click', function(e){ e.preventDefault(); showQueueModal(); });
+}
+// ----------------- fin modal file d'attente -----------------
+
 // Met à jour le nombre affiché entre parenthèses à côté du lien "Voir les dons en attente".
 // Met à jour les deux liens si présents.
 async function refreshQueueCount() {
@@ -866,7 +1093,7 @@ async function refreshQueueCount() {
     if (queueStatusLink) queueStatusLink.href = href;
     if (queueStatusLinkParser) queueStatusLinkParser.href = href;
   } catch (e) {
-    // silencieux
+    // Silencieux : ce n'est qu'un compteur indicatif, pas une donnée critique.
   }
 }
 refreshQueueCount();
