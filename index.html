@@ -5,7 +5,7 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Palette noir/blanc + gris d'arrière-plan, pas de container bordé */
+    /* (tout le CSS inchangé — laissé tel quel pour la clarté) */
     :root{
       --page-bg: #e6e6e6;
       --header-bg: #d9d9d9;
@@ -14,79 +14,35 @@
       --max-w: 920px;
       --yapla-orange: #f59e0b;
     }
-
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    .centered { 
-      max-width: var(--max-w); 
-      margin:28px auto;         
-      padding:0 12px 28px 12px;   
-      box-sizing:border-box; 
-    }
-
-    .header-banner{
-      background:var(--header-bg);
-      padding:16px 18px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      border-radius:6px;
-      box-sizing:border-box;
-    }
+    .centered { max-width: var(--max-w); margin:28px auto; padding:0 12px 28px 12px; box-sizing:border-box; }
+    .header-banner{ background:var(--header-bg); padding:16px 18px; display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap; border-radius:6px; box-sizing:border-box; }
     .header-left{display:flex;flex-direction:column;gap:6px}
     .header-title{font-size:18px;margin:0;font-weight:900;color:var(--black)}
     .header-actions { display:flex; gap:8px; align-items:center; }
     .header-actions .btn { padding:6px 10px; font-size:13px; font-weight:700; }
     #toggleViewBtn { min-width:195px; justify-content:center; }
-
     .body{padding:16px 0 0 0;background:transparent}
     label{display:block;font-weight:700;margin:12px 0 6px;color:var(--black);font-size:13px}
     textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
-
-    .btn{
-      padding:8px 12px;
-      border-radius:2px;
-      border:2px solid var(--black);
-      background: var(--input-bg);
-      color: var(--black);
-      font-weight:700;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      text-decoration:none;
-    }
+    .btn{ padding:8px 12px; border-radius:2px; border:2px solid var(--black); background: var(--input-bg); color: var(--black); font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; }
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity:0.5; cursor:not-allowed; }
     .btn-primary{ background: var(--black); color: var(--input-bg); }
     .btn-ghost{ background: var(--input-bg); color: var(--black); }
-
-    /* Menu déroulant personnalisé (remplace le rendu système bleu des <select>) */
     .cs-wrapper{ position:relative; width:100%; }
     .cs-native{ position:absolute; opacity:0; pointer-events:none; height:0; width:0; margin:0; padding:0; border:0; }
     .cs-trigger{ width:100%; justify-content:space-between; text-align:left; }
     .cs-trigger .cs-caret{ flex-shrink:0; transition:transform .15s ease; }
     .cs-trigger.cs-open .cs-caret{ transform:rotate(180deg); }
     .cs-trigger .cs-trigger-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .cs-panel{
-      position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50;
-      background:var(--input-bg); border:2px solid var(--black); border-radius:4px;
-      max-height:240px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18);
-    }
+    .cs-panel{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50; background:var(--input-bg); border:2px solid var(--black); border-radius:4px; max-height:240px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18); }
     .cs-option{ padding:10px 12px; font-size:14px; font-weight:700; cursor:pointer; border-bottom:1px dashed var(--black); }
     .cs-option:last-child{ border-bottom:none; }
     .cs-option:hover, .cs-option:active{ background:var(--black); color:var(--input-bg); }
     .cs-option-selected{ background:var(--header-bg); }
-
-    .yapla-btn{
-      background: var(--yapla-orange);
-      color: #fff;
-      border-color: #b45309;
-    }
-
+    .yapla-btn{ background: var(--yapla-orange); color: #fff; border-color: #b45309; }
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px;letter-spacing:.3px}
     .field{padding:8px 0;border-bottom:1px dashed var(--black)}
@@ -98,26 +54,18 @@
     .success .dot{width:36px;height:36px;border-radius:4px;border:2px solid var(--black);background:var(--input-bg);color:var(--black);display:flex;align-items:center;justify-content:center;font-weight:700}
     .success .text{font-weight:700;color:var(--black)}
     .success-actions{margin-left:auto;display:flex;gap:8px}
-
     .preview-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-
-    /* Modal de sélection d'email, dans le même style noir/blanc que le reste */
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;box-sizing:border-box}
     .modal-box{background:var(--input-bg);border:2px solid var(--black);border-radius:4px;padding:18px;max-width:400px;width:100%;box-sizing:border-box}
     .modal-box h3{margin:0 0 10px;font-size:16px;font-weight:900}
     .modal-box p{margin:0 0 12px;font-size:13px}
     .modal-box select{width:100%;padding:8px;margin-bottom:14px;border:1px solid var(--black);border-radius:2px;font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     .modal-actions{display:flex;justify-content:flex-end;gap:8px}
-
-    /* Menus déroulants personnalisés (le <select> natif reste caché pour
-       porter la valeur/les événements, la liste ouverte est dessinée par nous
-       pour éviter le rendu bleu du système sur mobile) */
     .dselect-wrap{position:relative;}
     .dselect-native{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     .dselect-trigger{width:100%;}
     .dselect-label{flex:1;min-width:0;overflow:hidden;text-align:left;}
-    .dselect-label .dselect-option-main,
-    .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .dselect-label .dselect-option-main, .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .dselect-chevron{flex-shrink:0;transition:transform .15s ease;margin-left:auto;}
     .dselect-wrap.open .dselect-chevron{transform:rotate(180deg);}
     .dselect-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:var(--input-bg);border:2px solid var(--black);border-radius:4px;max-height:240px;overflow-y:auto;box-shadow:0 4px 10px rgba(0,0,0,0.2);}
@@ -128,7 +76,6 @@
     .dselect-option:hover .dselect-option-sub, .dselect-option.active .dselect-option-sub{color:#bfbfbf;}
     .dselect-option:last-child{border-bottom:none;}
     .dselect-option:hover, .dselect-option.active{background:var(--black);color:var(--input-bg);}
-
     @media(max-width:640px){
       .controls{flex-direction:column;align-items:stretch}
       .header-banner{padding:14px}
@@ -186,6 +133,11 @@
       <div id="previewActions" class="preview-actions" style="display:none;">
         <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
         <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
+      </div>
+
+      <!-- lien vers la page de file d'attente (ajouté ici dans la vue Parser) -->
+      <div style="margin-top:14px; text-align:center;">
+        <a id="queueStatusLinkParser" href="#" target="_blank" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
       </div>
 
       <!-- success -->
@@ -299,9 +251,6 @@ const annualSection = document.getElementById('annualSection');
 
 const openYaplaBtn = document.getElementById('openYaplaBtn');
 const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
-// Référence gardée pour pouvoir refermer l'onglet Yapla en même temps que
-// celui-ci (uniquement possible pour un onglet ouvert via window.open depuis
-// cette page - un onglet ouvert autrement ne peut pas être fermé par script).
 let yaplaWindow = null;
 
 openYaplaBtn.addEventListener('click', () => {
@@ -311,18 +260,12 @@ openYaplaBtn.addEventListener('click', () => {
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
 
-// Échappe le texte avant de l'insérer via innerHTML, pour qu'un champ contenant
-// des caractères type < > & " ne casse pas l'affichage (ou pire).
 function escapeHtml(str){
   return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
     return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
   });
 }
 
-// Construit un menu déroulant personnalisé au-dessus d'un <select> natif caché.
-// Le <select> reste la source de vérité (value, événement "change"), donc tout
-// le reste du code (lecture de .value, addEventListener('change', ...),
-// innerHTML pour peupler les options) continue de fonctionner sans changement.
 function enhanceDselect(selectEl) {
   const wrap = selectEl.closest('.dselect-wrap');
   if (!wrap) return;
@@ -403,8 +346,6 @@ function enhanceDselect(selectEl) {
     if (e.key === 'Escape') close();
   });
 
-  // Exposé pour que le code existant puisse rafraîchir l'affichage après
-  // avoir repeuplé le <select> natif (ex: donorSelect.innerHTML = ...).
   selectEl._dselectRefresh = render;
   render();
 }
@@ -681,8 +622,6 @@ submitBtn.addEventListener('click', async () => {
   }
 });
 
-// data.status vaut "SENT" (envoyé tout de suite, entre 8h et 18h) ou "QUEUED"
-// (mis en attente côté script, hors de cette tranche horaire).
 function showSuccess(data) {
   const text = successBox.querySelector('.text');
   text.textContent = (data && data.status === 'QUEUED')
@@ -771,8 +710,6 @@ generateAnnualBtn.addEventListener('click', async () => {
   }
 });
 
-// Affiche une modal (dans le style noir/blanc de l'outil) pour choisir l'email
-// de destination. Résout avec l'email choisi, ou null si annulé.
 function askEmailChoice(sortedEmails, selectedKey, year){
   return new Promise((resolve) => {
     const modalOverlay = document.createElement('div');
@@ -860,9 +797,6 @@ generatePdfBtn.addEventListener('click', async () => {
 
     pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${escapeHtml(targetEmail)} en cours...</div>`;
 
-    // Envoyé en POST (plutôt qu'en GET) car cette action a un effet de bord
-    // (création de fichier + envoi d'email) : ça évite qu'un simple
-    // pré-chargement de lien ou un historique de navigateur ne la redéclenche.
     const response = await fetch(SCRIPT_URL, {
       method: 'POST',
       body: new URLSearchParams({
@@ -898,10 +832,6 @@ toggleViewBtn.addEventListener('click', () => {
   toggleViewLabel.textContent = showingAnnual ? 'Parser un don' : 'Récapitulatif annuel';
 });
 
-// Le bouton "Envoyer le Reçu Fiscal Annuel" ne devient actif qu'après un
-// récapitulatif généré avec succès pour le donateur/année en cours. Tout
-// changement de sélection invalide ce récapitulatif pour éviter d'envoyer
-// un reçu qui ne correspond plus à ce qui a été vérifié à l'écran.
 donorSelect.addEventListener('change', () => {
   generatePdfBtn.disabled = true;
   annualOutput.style.display = 'none';
@@ -917,17 +847,26 @@ initYearSelect();
 loadDonorsFromSheet();
 
 const queueStatusLink = document.getElementById('queueStatusLink');
+const queueStatusLinkParser = document.getElementById('queueStatusLinkParser');
 queueStatusLink.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
+if (queueStatusLinkParser) queueStatusLinkParser.href = queueStatusLink.href;
 
 // Met à jour le nombre affiché entre parenthèses à côté du lien "Voir les dons en attente".
+// Met à jour les deux liens si présents.
 async function refreshQueueCount() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=queue_count&token=${encodeURIComponent(API_TOKEN)}`);
     const data = await res.json();
     const n = data.count || 0;
-    queueStatusLink.textContent = `Voir les dons en attente (hors 8h-18h)${n > 0 ? ' (' + n + ')' : ''}`;
+    const txt = `Voir les dons en attente (hors 8h-18h)${n > 0 ? ' (' + n + ')' : ''}`;
+    if (queueStatusLink) queueStatusLink.textContent = txt;
+    if (queueStatusLinkParser) queueStatusLinkParser.textContent = txt;
+    // href déjà défini plus haut, mais on s'assure qu'il soit identique
+    const href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
+    if (queueStatusLink) queueStatusLink.href = href;
+    if (queueStatusLinkParser) queueStatusLinkParser.href = href;
   } catch (e) {
-    // Silencieux : ce n'est qu'un compteur indicatif, pas une donnée critique.
+    // silencieux
   }
 }
 refreshQueueCount();
