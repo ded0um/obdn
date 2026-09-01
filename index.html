@@ -5,7 +5,6 @@
   <title>Parseur et Envoyeur vers GForm</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* Palette noir/blanc + gris d'arrière-plan, pas de container bordé */
     :root{
       --page-bg: #e6e6e6;
       --header-bg: #d9d9d9;
@@ -16,24 +15,8 @@
     }
 
     html,body{height:100%;margin:0;background:var(--page-bg);color:var(--black);font-family:Arial,Helvetica,sans-serif}
-    .centered { 
-      max-width: var(--max-w); 
-      margin:28px auto;         
-      padding:0 12px 28px 12px;   
-      box-sizing:border-box; 
-    }
-
-    .header-banner{
-      background:var(--header-bg);
-      padding:16px 18px;
-      display:flex;
-      align-items:center;
-      gap:12px;
-      justify-content:space-between;
-      flex-wrap:wrap;
-      border-radius:6px;
-      box-sizing:border-box;
-    }
+    .centered { max-width: var(--max-w); margin:28px auto; padding:0 12px 28px 12px; box-sizing:border-box; }
+    .header-banner{ background:var(--header-bg); padding:16px 18px; display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap; border-radius:6px; box-sizing:border-box; }
     .header-left{display:flex;flex-direction:column;gap:6px}
     .header-title{font-size:18px;margin:0;font-weight:900;color:var(--black)}
     .header-actions { display:flex; gap:8px; align-items:center; }
@@ -45,47 +28,11 @@
     textarea{width:100%;min-height:140px;padding:10px;border-radius:4px;border:1px solid var(--black);font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     .controls{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 
-    .btn{
-      padding:8px 12px;
-      border-radius:2px;
-      border:2px solid var(--black);
-      background: var(--input-bg);
-      color: var(--black);
-      font-weight:700;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      text-decoration:none;
-    }
+    .btn{ padding:8px 12px; border-radius:2px; border:2px solid var(--black); background: var(--input-bg); color: var(--black); font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; }
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity:0.5; cursor:not-allowed; }
     .btn-primary{ background: var(--black); color: var(--input-bg); }
     .btn-ghost{ background: var(--input-bg); color: var(--black); }
-
-    /* Menu déroulant personnalisé (remplace le rendu système bleu des <select>) */
-    .cs-wrapper{ position:relative; width:100%; }
-    .cs-native{ position:absolute; opacity:0; pointer-events:none; height:0; width:0; margin:0; padding:0; border:0; }
-    .cs-trigger{ width:100%; justify-content:space-between; text-align:left; }
-    .cs-trigger .cs-caret{ flex-shrink:0; transition:transform .15s ease; }
-    .cs-trigger.cs-open .cs-caret{ transform:rotate(180deg); }
-    .cs-trigger .cs-trigger-label{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .cs-panel{
-      position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50;
-      background:var(--input-bg); border:2px solid var(--black); border-radius:4px;
-      max-height:240px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18);
-    }
-    .cs-option{ padding:10px 12px; font-size:14px; font-weight:700; cursor:pointer; border-bottom:1px dashed var(--black); }
-    .cs-option:last-child{ border-bottom:none; }
-    .cs-option:hover, .cs-option:active{ background:var(--black); color:var(--input-bg); }
-    .cs-option-selected{ background:var(--header-bg); }
-
-    .yapla-btn{
-      background: var(--yapla-orange);
-      color: #fff;
-      border-color: #b45309;
-    }
 
     .preview{margin-top:14px;padding:12px;border-radius:6px;border:1px solid var(--black);background:var(--input-bg)}
     .section-title{font-weight:900;padding:8px 0;border-top:1px solid var(--black);margin-top:10px;letter-spacing:.3px}
@@ -101,7 +48,6 @@
 
     .preview-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 
-    /* Modal de sélection d'email, dans le même style noir/blanc que le reste */
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);display:flex;justify-content:center;align-items:center;z-index:9999;padding:16px;box-sizing:border-box}
     .modal-box{background:var(--input-bg);border:2px solid var(--black);border-radius:4px;padding:18px;max-width:400px;width:100%;box-sizing:border-box}
     .modal-box h3{margin:0 0 10px;font-size:16px;font-weight:900}
@@ -109,15 +55,10 @@
     .modal-box select{width:100%;padding:8px;margin-bottom:14px;border:1px solid var(--black);border-radius:2px;font-size:14px;background:var(--input-bg);color:var(--black);box-sizing:border-box}
     .modal-actions{display:flex;justify-content:flex-end;gap:8px}
 
-    /* Menus déroulants personnalisés (le <select> natif reste caché pour
-       porter la valeur/les événements, la liste ouverte est dessinée par nous
-       pour éviter le rendu bleu du système sur mobile) */
     .dselect-wrap{position:relative;}
     .dselect-native{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
     .dselect-trigger{width:100%;}
     .dselect-label{flex:1;min-width:0;overflow:hidden;text-align:left;}
-    .dselect-label .dselect-option-main,
-    .dselect-label .dselect-option-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .dselect-chevron{flex-shrink:0;transition:transform .15s ease;margin-left:auto;}
     .dselect-wrap.open .dselect-chevron{transform:rotate(180deg);}
     .dselect-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:var(--input-bg);border:2px solid var(--black);border-radius:4px;max-height:240px;overflow-y:auto;box-shadow:0 4px 10px rgba(0,0,0,0.2);}
@@ -139,7 +80,6 @@
 </head>
 <body>
   <div class="centered">
-    <!-- header banner -->
     <div class="header-banner" aria-hidden="false">
       <div class="header-left">
         <div class="header-title">Parseur et Envoyeur vers GForm</div>
@@ -153,60 +93,47 @@
       </div>
     </div>
 
-    <!-- body -->
     <div class="body">
-      <!-- vue 1 : parser un don -->
       <div id="parserSection" class="preview">
         <div class="section-title" style="border-top:none;margin-top:0;">PARSER UN DON</div>
 
-      <!-- input paste -->
-      <div>
-        <label for="raw">Coller le texte copié depuis Yapla</label>
-        <textarea id="raw" placeholder="Collez ici les informations du donateur et du don Yapla..."></textarea>
-      </div>
+        <div>
+          <label for="raw">Coller le texte copié depuis Yapla</label>
+          <textarea id="raw" placeholder="Collez ici les informations du donateur et du don Yapla..."></textarea>
+        </div>
 
-      <!-- parser control -->
-      <div class="controls" style="margin-top:12px">
-        <button id="parseBtn" class="btn btn-primary" title="Analyser le texte collé">Parser</button>
-        <div id="validationMsg" class="msg" style="display:none"></div>
-      </div>
+        <div class="controls" style="margin-top:12px">
+          <button id="parseBtn" class="btn btn-primary" title="Analyser le texte collé">Parser</button>
+          <div id="validationMsg" class="msg" style="display:none"></div>
+        </div>
 
-      <!-- preview -->
-      <div id="previewBox" style="display:none" aria-live="polite">
-        <div class="section-title">DON</div>
-        <div id="donFields"></div>
+        <div id="previewBox" style="display:none" aria-live="polite">
+          <div class="section-title">DON</div>
+          <div id="donFields"></div>
+          <div style="height:8px"></div>
+          <div class="section-title">DONATEUR</div>
+          <div id="donateurFields"></div>
+        </div>
 
-        <div style="height:8px"></div>
+        <div id="previewActions" class="preview-actions" style="display:none;">
+          <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
+          <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
+        </div>
 
-        <div class="section-title">DONATEUR</div>
-        <div id="donateurFields"></div>
-      </div>
+        <div style="margin-top:14px; text-align:center;">
+          <a id="queueStatusLinkParser" href="#" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
+        </div>
 
-      <!-- buttons under preview -->
-      <div id="previewActions" class="preview-actions" style="display:none;">
-        <button id="prefillBtn" class="btn btn-ghost" disabled>Ouvrir lien prérempli (Vérifier)</button>
-        <button id="submitBtn" class="btn btn-primary" disabled>Soumettre au GForm</button>
-      </div>
-
-      <!-- lien vers la page de file d'attente (ajouté ici dans la vue Parser) -->
-      <div style="margin-top:14px; text-align:center;">
-        <a id="queueStatusLinkParser" href="#" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
-      </div>
-
-      <!-- success -->
-      <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
-        <div class="dot">✓</div>
-        <div class="text">As tu un autre don a parser ?</div>
-        <div class="success-actions">
-          <button id="anotherBtn" class="btn btn-ghost">Oui</button>
-          <button id="finishBtn" class="btn btn-ghost">Fermer l'onglet</button>
+        <div id="successBox" style="display:none" class="success" role="status" aria-live="polite">
+          <div class="dot">✓</div>
+          <div class="text">As tu un autre don a parser ?</div>
+          <div class="success-actions">
+            <button id="anotherBtn" class="btn btn-ghost">Oui</button>
+            <button id="finishBtn" class="btn btn-ghost">Fermer l'onglet</button>
+          </div>
         </div>
       </div>
 
-      </div>
-      <!-- fin vue 1 -->
-
-      <!-- vue 2 : SECTION REÇU FISCAL ANNUEL (RÉCAPITULATIF) -->
       <div id="annualSection" class="preview" style="display:none;">
         <div class="section-title" style="border-top:none;margin-top:0;">RÉCAPITULATIF ANNUEL (REÇU ANNUEL)</div>
         <div class="controls">
@@ -223,12 +150,11 @@
               <div class="dselect-list" role="listbox"></div>
             </div>
           </div>
+
           <div style="width:140px;">
             <label for="annualYear">Année :</label>
             <div class="dselect-wrap">
-              <select id="annualYear" class="dselect-native" tabindex="-1">
-                <!-- Les années seront générées automatiquement -->
-              </select>
+              <select id="annualYear" class="dselect-native" tabindex="-1"></select>
               <button type="button" class="btn btn-ghost dselect-trigger" style="justify-content:space-between;">
                 <div class="dselect-label">--</div>
                 <svg class="dselect-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -237,10 +163,12 @@
             </div>
           </div>
         </div>
+
         <div class="controls" style="margin-top:12px;">
           <button id="generateAnnualBtn" class="btn btn-primary">Générer le récapitulatif</button>
           <button id="generatePdfBtn" class="btn btn-primary" disabled>Générer & Envoyer le Reçu Fiscal Annuel (PDF)</button>
         </div>
+
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
         <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
 
@@ -248,98 +176,94 @@
           <a id="queueStatusLink" href="#" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
         </div>
       </div>
-      <!-- fin vue 2 -->
 
     </div>
   </div>
 
 <script>
 /* Configuration */
-const formAction = 'https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse';
+const formAction = "https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse";
 const mapping = {
-  prenom: 'entry.804774151',
-  nom: 'entry.1947114094',
-  email: 'entry.81735574',
-  adresse: 'entry.1914487624',
-  code_postal: 'entry.1544391775',
-  ville: 'entry.1912325143',
-  pays: 'entry.1171780890',
-  montant: 'entry.1174142672',
-  date_creation: 'entry.163110140',
-  mode_paiement: 'entry.879040345'
+  prenom: "entry.804774151",
+  nom: "entry.1947114094",
+  email: "entry.81735574",
+  adresse: "entry.1914487624",
+  code_postal: "entry.1544391775",
+  ville: "entry.1912325143",
+  pays: "entry.1171780890",
+  montant: "entry.1174142672",
+  date_creation: "entry.163110140",
+  mode_paiement: "entry.879040345"
 };
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec';
+// METTRE ICI L'URL DE DÉPLOIEMENT DE TON APPS SCRIPT
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzd07t2TtQa5QbsqvZI7UZbPAUhjuZ78c_ssQ7N-9bZLv6zw4EYlGUEqZBJWBtyRid3/exec";
 
-// Jeton partagé : DOIT être identique à la constante TOKEN_PARTAGE du script Apps Script.
-const API_TOKEN = 'b1a5caaf329bef0a5698361de58df201';
+// Jeton partagé (doit correspondre au TOKEN_PARTAGE du script)
+const API_TOKEN = "b1a5caaf329bef0a5698361de58df201";
 
-const rawEl = document.getElementById('raw');
-const parseBtn = document.getElementById('parseBtn');
-const prefillBtn = document.getElementById('prefillBtn');
-const submitBtn = document.getElementById('submitBtn');
-const validationMsg = document.getElementById('validationMsg');
-const previewBox = document.getElementById('previewBox');
-const previewActions = document.getElementById('previewActions');
-const donFields = document.getElementById('donFields');
-const donateurFields = document.getElementById('donateurFields');
+/* Elements */
+const rawEl = document.getElementById("raw");
+const parseBtn = document.getElementById("parseBtn");
+const prefillBtn = document.getElementById("prefillBtn");
+const submitBtn = document.getElementById("submitBtn");
+const validationMsg = document.getElementById("validationMsg");
+const previewBox = document.getElementById("previewBox");
+const previewActions = document.getElementById("previewActions");
+const donFields = document.getElementById("donFields");
+const donateurFields = document.getElementById("donateurFields");
 
-const successBox = document.getElementById('successBox');
-const anotherBtn = document.getElementById('anotherBtn');
-const finishBtn = document.getElementById('finishBtn');
+const successBox = document.getElementById("successBox");
+const anotherBtn = document.getElementById("anotherBtn");
+const finishBtn = document.getElementById("finishBtn");
 
-const donorSelect = document.getElementById('donorSelect');
-const annualYear = document.getElementById('annualYear');
-const generateAnnualBtn = document.getElementById('generateAnnualBtn');
-const annualOutput = document.getElementById('annualOutput');
+const donorSelect = document.getElementById("donorSelect");
+const annualYear = document.getElementById("annualYear");
+const generateAnnualBtn = document.getElementById("generateAnnualBtn");
+const annualOutput = document.getElementById("annualOutput");
+const generatePdfBtn = document.getElementById("generatePdfBtn");
+const pdfOutput = document.getElementById("pdfOutput");
 
-const generatePdfBtn = document.getElementById('generatePdfBtn');
-const pdfOutput = document.getElementById('pdfOutput');
+const toggleViewBtn = document.getElementById("toggleViewBtn");
+const toggleViewLabel = document.getElementById("toggleViewLabel");
+const parserSection = document.getElementById("parserSection");
+const annualSection = document.getElementById("annualSection");
 
-const toggleViewBtn = document.getElementById('toggleViewBtn');
-const toggleViewLabel = document.getElementById('toggleViewLabel');
-const parserSection = document.getElementById('parserSection');
-const annualSection = document.getElementById('annualSection');
-
-const openYaplaBtn = document.getElementById('openYaplaBtn');
-const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
-// Référence gardée pour pouvoir refermer l'onglet Yapla en même temps que
-// celui-ci (uniquement possible pour un onglet ouvert via window.open depuis
-// cette page - un onglet ouvert autrement ne peut pas être fermé par script).
+const openYaplaBtn = document.getElementById("openYaplaBtn");
+const YAPLA_URL = "https://s2.yapla.com/donation/fr/campaign/list";
 let yaplaWindow = null;
 
-openYaplaBtn.addEventListener('click', () => {
-  yaplaWindow = window.open(YAPLA_URL, '_blank');
-});
+openYaplaBtn.addEventListener("click", () => { yaplaWindow = window.open(YAPLA_URL, "_blank"); });
 
-function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
-function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
+function showMsg(txt){ validationMsg.style.display="block"; validationMsg.textContent = txt; }
+function clearMsg(){ validationMsg.style.display="none"; validationMsg.textContent = ""; }
 
 function escapeHtml(str){
-  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
-    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  return String(str == null ? "" : str).replace(/[&<>"']/g, function(c){
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
   });
 }
 
+/* dselect helper (unchanged logic) */
 function enhanceDselect(selectEl) {
-  const wrap = selectEl.closest('.dselect-wrap');
+  const wrap = selectEl.closest(".dselect-wrap");
   if (!wrap) return;
-  const trigger = wrap.querySelector('.dselect-trigger');
-  const label = wrap.querySelector('.dselect-label');
-  const list = wrap.querySelector('.dselect-list');
+  const trigger = wrap.querySelector(".dselect-trigger");
+  const label = wrap.querySelector(".dselect-label");
+  const list = wrap.querySelector(".dselect-list");
 
   function updateLabel() {
     const selected = selectEl.options[selectEl.selectedIndex];
-    label.innerHTML = '';
+    label.innerHTML = "";
     if (selected) {
       if (selected.dataset.name) {
-        const main = document.createElement('div');
-        main.className = 'dselect-option-main';
+        const main = document.createElement("div");
+        main.className = "dselect-option-main";
         main.textContent = selected.dataset.name;
         label.appendChild(main);
         if (selected.dataset.email) {
-          const sub = document.createElement('div');
-          sub.className = 'dselect-option-sub';
+          const sub = document.createElement("div");
+          sub.className = "dselect-option-sub";
           sub.textContent = selected.dataset.email;
           label.appendChild(sub);
         }
@@ -350,28 +274,28 @@ function enhanceDselect(selectEl) {
   }
 
   function render() {
-    list.innerHTML = '';
+    list.innerHTML = "";
     Array.from(selectEl.options).forEach((opt) => {
-      const item = document.createElement('div');
-      item.className = 'dselect-option' + (opt.value === selectEl.value ? ' active' : '');
-      item.setAttribute('role', 'option');
+      const item = document.createElement("div");
+      item.className = "dselect-option" + (opt.value === selectEl.value ? " active" : "");
+      item.setAttribute("role", "option");
       if (opt.dataset.name) {
-        const main = document.createElement('div');
-        main.className = 'dselect-option-main';
+        const main = document.createElement("div");
+        main.className = "dselect-option-main";
         main.textContent = opt.dataset.name;
         item.appendChild(main);
         if (opt.dataset.email) {
-          const sub = document.createElement('div');
-          sub.className = 'dselect-option-sub';
+          const sub = document.createElement("div");
+          sub.className = "dselect-option-sub";
           sub.textContent = opt.dataset.email;
           item.appendChild(sub);
         }
       } else {
         item.textContent = opt.textContent;
       }
-      item.addEventListener('click', () => {
+      item.addEventListener("click", () => {
         selectEl.value = opt.value;
-        selectEl.dispatchEvent(new Event('change'));
+        selectEl.dispatchEvent(new Event("change"));
         updateLabel();
         close();
       });
@@ -380,114 +304,70 @@ function enhanceDselect(selectEl) {
     updateLabel();
   }
 
-  function open() {
-    render();
-    list.classList.add('open');
-    wrap.classList.add('open');
-  }
-  function close() {
-    list.classList.remove('open');
-    wrap.classList.remove('open');
-  }
+  function open() { render(); list.classList.add("open"); wrap.classList.add("open"); }
+  function close() { list.classList.remove("open"); wrap.classList.remove("open"); }
 
-  trigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (list.classList.contains('open')) close(); else open();
-  });
-  document.addEventListener('click', (e) => {
-    if (!wrap.contains(e.target)) close();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') close();
-  });
+  trigger.addEventListener("click", (e) => { e.stopPropagation(); if (list.classList.contains("open")) close(); else open(); });
+  document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
 
   selectEl._dselectRefresh = render;
   render();
 }
 
-function refreshDselect(selectEl) {
-  if (selectEl._dselectRefresh) selectEl._dselectRefresh();
-}
+function refreshDselect(selectEl){ if (selectEl._dselectRefresh) selectEl._dselectRefresh(); }
 
 function initYearSelect() {
   const currentYear = new Date().getFullYear();
-  annualYear.innerHTML = '';
+  annualYear.innerHTML = "";
   for (let y = currentYear; y >= currentYear - 3; y--) {
-    const opt = document.createElement('option');
+    const opt = document.createElement("option");
     opt.value = y;
     opt.textContent = y;
-    if (y === currentYear) {
-      opt.selected = true;
-    }
+    if (y === currentYear) opt.selected = true;
     annualYear.appendChild(opt);
   }
   refreshDselect(annualYear);
 }
 
-function normalizeAmount(raw){
-  if(!raw) return '';
-  let s = String(raw).replace(/\u00A0/g,' ').trim();
-  s = s.replace(/\s/g,'');
-  s = s.replace(/[^\d,.\-]/g,'');
-  if(!s) return '';
-  if(s.includes(',') && !s.includes('.')) s = s.replace(',', '.');
-  if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,'');
-  return s;
-}
+/* parsing helpers (unchanged) */
+function normalizeAmount(raw){ if(!raw) return ""; let s = String(raw).replace(/\u00A0/g," ").trim(); s = s.replace(/\s/g,""); s = s.replace(/[^\d,.\-]/g,""); if(!s) return ""; if(s.includes(",") && !s.includes(".")) s = s.replace(",", "."); if(s.match(/\.0+$/)) s = s.replace(/\.0+$/,""); return s; }
+function parseDateToYYYYMMDD(raw){ if(!raw) return ""; raw = String(raw).trim(); const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/); if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`; const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/); if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`; return ""; }
+function isoToDDMMYYYY(iso){ if(!iso) return ""; const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return ""; return `${m[3]}/${m[2]}/${m[1]}`; }
 
-function parseDateToYYYYMMDD(raw){
-  if(!raw) return '';
-  raw = String(raw).trim();
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const dmy = raw.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-  if(dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
-  return '';
-}
-
-function isoToDDMMYYYY(iso){
-  if(!iso) return '';
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if(!m) return '';
-  return `${m[3]}/${m[2]}/${m[1]}`;
-}
-
+/* load donors */
 async function loadDonorsFromSheet() {
   try {
     const response = await fetch(`${SCRIPT_URL}?action=donors&token=${encodeURIComponent(API_TOKEN)}`);
     const donors = await response.json();
-    
+
     const filteredDonors = donors.filter(d => {
-      const nom = (d.nom || '').trim();
-      const prenom = (d.prenom || '').trim();
-      
+      const nom = (d.nom || "").trim();
+      const prenom = (d.prenom || "").trim();
       if (!nom) return false;
-      
       const nomUpper = nom.toUpperCase();
       const prenomUpper = prenom.toUpperCase();
-      
-      if (nomUpper === 'TEST' || nomUpper.includes('NOM POUR AUTOCRAT')) return false;
-      if (nomUpper === 'NOM' && prenomUpper === 'PRENOM') return false;
-      
+      if (nomUpper === "TEST" || nomUpper.includes("NOM POUR AUTOCRAT")) return false;
+      if (nomUpper === "NOM" && prenomUpper === "PRENOM") return false;
       return true;
     });
 
-    filteredDonors.sort((a, b) => {
-      const nomA = (a.nom || '').trim().toUpperCase();
-      const nomB = (b.nom || '').trim().toUpperCase();
+    filteredDonors.sort((a,b) => {
+      const nomA = (a.nom || "").trim().toUpperCase();
+      const nomB = (b.nom || "").trim().toUpperCase();
       if (nomA !== nomB) return nomA.localeCompare(nomB);
-      const preA = (a.prenom || '').trim().toUpperCase();
-      const preB = (b.prenom || '').trim().toUpperCase();
+      const preA = (a.prenom || "").trim().toUpperCase();
+      const preB = (b.prenom || "").trim().toUpperCase();
       return preA.localeCompare(preB);
     });
-    
+
     donorSelect.innerHTML = '<option value="">-- Sélectionnez un donateur --</option>';
     filteredDonors.forEach(d => {
       const key = `${d.nom} ${d.prenom}`.trim().toUpperCase();
-      const opt = document.createElement('option');
+      const opt = document.createElement("option");
       opt.value = key;
       const nameText = `${d.nom} ${d.prenom}`;
-      const emailText = d.email ? d.email : 'Pas d\'email';
+      const emailText = d.email ? d.email : "Pas d'email";
       opt.textContent = `${nameText} — ${emailText}`;
       opt.dataset.name = nameText;
       opt.dataset.email = emailText;
@@ -500,17 +380,18 @@ async function loadDonorsFromSheet() {
   }
 }
 
+/* parse Yapla paste */
 function parseYapla(text){
   const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
   const data = {};
-  const labels = ['Prénom','Nom','Courriel','Téléphone','Adresse','Ville','Code postal','Pays','Montant','Date de création','Date officielle du don','Don anonyme'];
+  const labels = ["Prénom","Nom","Courriel","Téléphone","Adresse","Ville","Code postal","Pays","Montant","Date de création","Date officielle du don","Don anonyme"];
   for(let i=0;i<lines.length;i++){
     const L = lines[i];
     for(const lab of labels){
       if(L.toLowerCase() === lab.toLowerCase()){
-        const val = (lines[i+1] || '').trim();
+        const val = (lines[i+1] || "").trim();
         if(val){
-          const key = lab.toLowerCase().replace(/\s+/g,'_').replace(/é|è|ê/g,'e');
+          const key = lab.toLowerCase().replace(/\s+/g,"_").replace(/é|è|ê/g,"e");
           data[key] = val;
         }
       }
@@ -522,85 +403,81 @@ function parseYapla(text){
     const cp = L.match(/\b\d{5}\b/);
     if(cp) data.code_postal = cp[0];
     const phone = L.match(/(?:\+?\d[\d .-]{6,}\d)/);
-    if(phone) data.telephone = phone[0].replace(/\s+/g,'');
+    if(phone) data.telephone = phone[0].replace(/\s+/g,"");
   }
   if((!data.prenom || !data.nom) && lines[0]){
     const first = lines[0].split(/\s+/);
     if(first.length>=2){
       if(!data.prenom) data.prenom = first[0];
-      if(!data.nom) data.nom = first.slice(1).join(' ');
+      if(!data.nom) data.nom = first.slice(1).join(" ");
     }
   }
-  const date_raw = data['date_de_creation'] || data['date_officielle_du_don'] || '';
-  const date_iso = parseDateToYYYYMMDD(date_raw) || '';
+  const date_raw = data["date_de_creation"] || data["date_officielle_du_don"] || "";
+  const date_iso = parseDateToYYYYMMDD(date_raw) || "";
   const date_display = isoToDDMMYYYY(date_iso);
   return {
-    prenom: data.prenom || '',
-    nom: data.nom || '',
-    email: data.courriel || '',
-    adresse: data.adresse || '',
-    ville: data.ville || '',
-    code_postal: data.code_postal || '',
-    pays: data.pays || '',
-    montant: normalizeAmount(data.montant || ''),
+    prenom: data.prenom || "",
+    nom: data.nom || "",
+    email: data.courriel || "",
+    adresse: data.adresse || "",
+    ville: data.ville || "",
+    code_postal: data.code_postal || "",
+    pays: data.pays || "",
+    montant: normalizeAmount(data.montant || ""),
     date_iso: date_iso,
     date_display: date_display
   };
 }
 
+/* render preview */
 function renderPreview(parsed){
-  donFields.innerHTML = '';
-  donateurFields.innerHTML = '';
+  donFields.innerHTML = "";
+  donateurFields.innerHTML = "";
 
   const donEntries = [
-    ['MONTANT', parsed.montant || ''],
-    ['DATE', parsed.date_display || ''],
-    ['MODE DE VERSEMENT', 'Carte bancaire']
+    ["MONTANT", parsed.montant || ""],
+    ["DATE", parsed.date_display || ""],
+    ["MODE DE VERSEMENT", "Carte bancaire"]
   ];
   for(const [label, value] of donEntries){
-    const row = document.createElement('div');
-    row.className = 'field';
+    const row = document.createElement("div");
+    row.className = "field";
     row.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div>`;
     donFields.appendChild(row);
   }
 
-  const spacer = document.createElement('div');
-  spacer.style.height = '6px';
+  const spacer = document.createElement("div");
+  spacer.style.height = "6px";
   donFields.appendChild(spacer);
 
   const donorEntries = [
-    ['NOM', parsed.nom || ''],
-    ['PRENOM', parsed.prenom || ''],
-    ['ADRESSE', parsed.adresse || ''],
-    ['CODE POSTAL', parsed.code_postal || ''],
-    ['VILLE', parsed.ville || ''],
-    ['PAYS', parsed.pays || ''],
-    ['ADRESSE MAIL', parsed.email || '']
+    ["NOM", parsed.nom || ""],
+    ["PRENOM", parsed.prenom || ""],
+    ["ADRESSE", parsed.adresse || ""],
+    ["CODE POSTAL", parsed.code_postal || ""],
+    ["VILLE", parsed.ville || ""],
+    ["PAYS", parsed.pays || ""],
+    ["ADRESSE MAIL", parsed.email || ""]
   ];
   for(const [label, value] of donorEntries){
-    const row = document.createElement('div');
-    row.className = 'field';
+    const row = document.createElement("div");
+    row.className = "field";
     row.innerHTML = `<div class="label">${escapeHtml(label)}</div><div class="value">${escapeHtml(value)}</div>`;
     donateurFields.appendChild(row);
   }
 }
 
-function canParse(){
-  const raw = rawEl.value.trim();
-  if(!raw){ showMsg("Veuillez coller d'abord le texte Yapla."); return false; }
-  clearMsg(); return true;
-}
-
+/* buttons logic */
+function canParse(){ const raw = rawEl.value.trim(); if(!raw){ showMsg("Veuillez coller d'abord le texte Yapla."); return false; } clearMsg(); return true; }
 let lastParsed = null;
 
-parseBtn.addEventListener('click', () => {
+parseBtn.addEventListener("click", () => {
   if(!canParse()) return;
-  const txt = rawEl.value;
-  const parsed = parseYapla(txt);
+  const parsed = parseYapla(rawEl.value);
   lastParsed = parsed;
   renderPreview(parsed);
-  previewBox.style.display = 'block';
-  previewActions.style.display = 'flex';
+  previewBox.style.display = "block";
+  previewActions.style.display = "flex";
   prefillBtn.disabled = false;
   submitBtn.disabled = false;
   clearMsg();
@@ -617,141 +494,94 @@ function buildPrefillURL(parsed){
   if(parsed.pays) params.set(mapping.pays, parsed.pays);
   if(parsed.montant) params.set(mapping.montant, parsed.montant);
   if(parsed.date_iso) params.set(mapping.date_creation, parsed.date_iso);
-  params.set(mapping.mode_paiement, 'Carte bancaire');
-  const viewBase = formAction.replace('/formResponse','/viewform');
-  return viewBase + '?usp=pp_url&' + params.toString();
+  params.set(mapping.mode_paiement, "Carte bancaire");
+  const viewBase = formAction.replace("/formResponse","/viewform");
+  return viewBase + "?usp=pp_url&" + params.toString();
 }
 
-prefillBtn.addEventListener('click', () => {
-  if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
+prefillBtn.addEventListener("click", () => {
+  if(!lastParsed){ showMsg("Parser d'abord avant d'ouvrir le lien prérempli."); return; }
   clearMsg();
-  const url = buildPrefillURL(lastParsed);
-  window.open(url, '_blank');
+  window.open(buildPrefillURL(lastParsed), "_blank");
 });
 
-submitBtn.addEventListener('click', async () => {
-  if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
+submitBtn.addEventListener("click", async () => {
+  if(!lastParsed){ showMsg("Parser d'abord avant de soumettre."); return; }
   clearMsg();
-
   submitBtn.disabled = true;
   parseBtn.disabled = true;
   prefillBtn.disabled = true;
   rawEl.disabled = true;
-
   try {
     const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
+      method: "POST",
       body: new URLSearchParams({
-        action: 'submit_don',
+        action: "submit_don",
         token: API_TOKEN,
-        prenom: lastParsed.prenom || '',
-        nom: lastParsed.nom || '',
-        email: lastParsed.email || '',
-        adresse: lastParsed.adresse || '',
-        code_postal: lastParsed.code_postal || '',
-        ville: lastParsed.ville || '',
-        pays: lastParsed.pays || '',
-        montant: lastParsed.montant || '',
-        date_creation: lastParsed.date_iso || '',
-        mode_paiement: 'Carte bancaire'
+        prenom: lastParsed.prenom || "",
+        nom: lastParsed.nom || "",
+        email: lastParsed.email || "",
+        adresse: lastParsed.adresse || "",
+        code_postal: lastParsed.code_postal || "",
+        ville: lastParsed.ville || "",
+        pays: lastParsed.pays || "",
+        montant: lastParsed.montant || "",
+        date_creation: lastParsed.date_iso || "",
+        mode_paiement: "Carte bancaire"
       })
     });
     const data = await response.json();
-
     if (data.error) {
       showMsg(data.error);
-      submitBtn.disabled = false;
-      parseBtn.disabled = false;
-      prefillBtn.disabled = false;
-      rawEl.disabled = false;
+      submitBtn.disabled = false; parseBtn.disabled = false; prefillBtn.disabled = false; rawEl.disabled = false;
       return;
     }
-
     showSuccess(data);
   } catch (e) {
-    showMsg('Erreur réseau lors de la soumission. Réessaie.');
-    submitBtn.disabled = false;
-    parseBtn.disabled = false;
-    prefillBtn.disabled = false;
-    rawEl.disabled = false;
+    showMsg("Erreur réseau lors de la soumission. Réessaie.");
+    submitBtn.disabled = false; parseBtn.disabled = false; prefillBtn.disabled = false; rawEl.disabled = false;
   }
 });
 
 function showSuccess(data) {
-  const text = successBox.querySelector('.text');
-  text.textContent = (data && data.status === 'QUEUED')
-    ? `Hors horaires (8h-18h) : ce don sera transmis automatiquement le ${data.send_after_display || 'prochain créneau de 8h'}. As-tu un autre don à parser ?`
-    : 'Don transmis. As-tu un autre don à parser ?';
-  successBox.style.display = 'flex';
-  successBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  if (data && data.status === 'QUEUED') refreshQueueCount();
+  const text = successBox.querySelector(".text");
+  text.textContent = (data && data.status === "QUEUED")
+    ? `Hors horaires (8h-18h) : ce don sera transmis automatiquement le ${data.send_after_display || "prochain créneau de 8h"}. As-tu un autre don à parser ?`
+    : "Don transmis. As-tu un autre don à parser ?";
+  successBox.style.display = "flex";
+  successBox.scrollIntoView({ behavior: "smooth", block: "end" });
+  if (data && data.status === "QUEUED") refreshQueueCount();
 }
 
-anotherBtn.addEventListener('click', () => {
-  rawEl.value = '';
-  lastParsed = null;
-  previewBox.style.display = 'none';
-  previewActions.style.display = 'none';
-  donFields.innerHTML = '';
-  donateurFields.innerHTML = '';
-  successBox.style.display = 'none';
-  submitBtn.disabled = true;
-  prefillBtn.disabled = true;
-  parseBtn.disabled = false;
-  rawEl.disabled = false;
-  clearMsg();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  rawEl.focus();
-  loadDonorsFromSheet();
+anotherBtn.addEventListener("click", () => {
+  rawEl.value = ""; lastParsed = null; previewBox.style.display = "none"; previewActions.style.display = "none"; donFields.innerHTML = ""; donateurFields.innerHTML = ""; successBox.style.display = "none";
+  submitBtn.disabled = true; prefillBtn.disabled = true; parseBtn.disabled = false; rawEl.disabled = false; clearMsg(); window.scrollTo({ top: 0, behavior: "smooth" }); rawEl.focus(); loadDonorsFromSheet();
 });
 
-finishBtn.addEventListener('click', () => {
-  if (yaplaWindow && !yaplaWindow.closed) {
-    yaplaWindow.close();
-  }
+finishBtn.addEventListener("click", () => {
+  if (yaplaWindow && !yaplaWindow.closed) yaplaWindow.close();
   window.close();
-  setTimeout(() => {
-    successBox.querySelector('.text').textContent = 'Tu peux fermer cet onglet manuellement.';
-    anotherBtn.style.display = 'none';
-    finishBtn.style.display = 'none';
-  }, 300);
+  setTimeout(() => { successBox.querySelector(".text").textContent = "Tu peux fermer cet onglet manuellement."; anotherBtn.style.display = "none"; finishBtn.style.display = "none"; }, 300);
 });
 
-generateAnnualBtn.addEventListener('click', async () => {
+/* Annual generation / PDF (unchanged logic) */
+generateAnnualBtn.addEventListener("click", async () => {
   const selectedKey = donorSelect.value;
   const year = annualYear.value;
-
-  if(!selectedKey) {
-    alert('Veuillez sélectionner un donateur.');
-    return;
-  }
-
-  generateAnnualBtn.disabled = true;
-  generatePdfBtn.disabled = true;
-  annualOutput.style.display = 'block';
-  annualOutput.innerHTML = `<div style="padding:8px;">Recherche en cours dans Google Sheets...</div>`;
-
+  if(!selectedKey) { alert("Veuillez sélectionner un donateur."); return; }
+  generateAnnualBtn.disabled = true; generatePdfBtn.disabled = true; annualOutput.style.display = "block"; annualOutput.innerHTML = `<div style="padding:8px;">Recherche en cours dans Google Sheets...</div>`;
   try {
     const url = `${SCRIPT_URL}?action=annual&donor=${encodeURIComponent(selectedKey)}&year=${encodeURIComponent(year)}&token=${encodeURIComponent(API_TOKEN)}`;
     const response = await fetch(url);
     const data = await response.json();
-
-    if(data.error) {
-      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">${escapeHtml(data.error)}</div>`;
-      return;
-    }
-
-    if(data.count === 0) {
-      annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Aucun don trouvé pour ce donateur en ${escapeHtml(year)}.</div>`;
-      return;
-    }
-
+    if(data.error) { annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">${escapeHtml(data.error)}</div>`; return; }
+    if(data.count === 0) { annualOutput.innerHTML = `<div style="color:var(--black); padding:8px; border:1px dashed var(--black);">Aucun don trouvé pour ce donateur en ${escapeHtml(year)}.</div>`; return; }
     const s = data.sample;
     annualOutput.innerHTML = `
       <div style="border:1px solid var(--black); padding:12px; border-radius:4px; background:var(--input-bg);">
         <div style="font-weight:900; margin-bottom:8px; font-size:14px;">RÉCAPITULATIF ANNUEL DE DONS (${escapeHtml(year)})</div>
         <div class="field"><div class="label">Donateur :</div><div class="value">${escapeHtml(s.nom)} ${escapeHtml(s.prenom)}</div></div>
-        <div class="field"><div class="label">Adresse :</div><div class="value">${[escapeHtml(s.adresse || '-'), [escapeHtml(s.code_postal || ''), escapeHtml(s.ville || '')].filter(Boolean).join(' ')].filter(Boolean).join('<br>')}</div></div>
+        <div class="field"><div class="label">Adresse :</div><div class="value">${[escapeHtml(s.adresse || "-"), [escapeHtml(s.code_postal || ""), escapeHtml(s.ville || "")].filter(Boolean).join(" ")].filter(Boolean).join("<br>")}</div></div>
         <div class="field"><div class="label">Nombre total de dons :</div><div class="value">${escapeHtml(data.count)}</div></div>
         <div class="field"><div class="label">MONTANT TOTAL CUMULÉ :</div><div class="value" style="font-size:15px;">${escapeHtml(data.total)} €</div></div>
         <div style="margin-top:12px; font-size:12px; font-weight:700;">Ce récapitulatif annuel peut maintenant être édité ou transmis au donateur.</div>
@@ -765,23 +595,17 @@ generateAnnualBtn.addEventListener('click', async () => {
   }
 });
 
-// Affiche une modal (dans le style noir/blanc de l'outil) pour choisir l'email
-// de destination. Résout avec l'email choisi, ou null si annulé.
 function askEmailChoice(sortedEmails, selectedKey, year){
   return new Promise((resolve) => {
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'modal-overlay';
-
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-box';
-
-    let optionsHtml = '';
+    const modalOverlay = document.createElement("div");
+    modalOverlay.className = "modal-overlay";
+    const modalContent = document.createElement("div");
+    modalContent.className = "modal-box";
+    let optionsHtml = "";
     sortedEmails.forEach((email, index) => {
       const badge = (index === 0) ? " (le plus récent)" : "";
-      const isSelected = (index === 0) ? "selected" : "";
-      optionsHtml += `<option value="${escapeHtml(email)}" ${isSelected}>${escapeHtml(email)}${escapeHtml(badge)}</option>`;
+      optionsHtml += `<option value="${escapeHtml(email)}">${escapeHtml(email)}${escapeHtml(badge)}</option>`;
     });
-
     modalContent.innerHTML = `
       <h3>Envoyer le reçu — ${escapeHtml(selectedKey)} (${escapeHtml(year)})</h3>
       <p>Sélectionne l'adresse e-mail du destinataire :</p>
@@ -791,91 +615,52 @@ function askEmailChoice(sortedEmails, selectedKey, year){
         <button id="modalConfirm" class="btn btn-primary" type="button">Envoyer</button>
       </div>
     `;
-
     modalOverlay.appendChild(modalContent);
     document.body.appendChild(modalOverlay);
-
-    document.getElementById('modalConfirm').addEventListener('click', () => {
-      const val = document.getElementById('modalEmailSelect').value;
+    document.getElementById("modalConfirm").addEventListener("click", () => {
+      const val = document.getElementById("modalEmailSelect").value;
       document.body.removeChild(modalOverlay);
       resolve(val);
     });
-
-    document.getElementById('modalCancel').addEventListener('click', () => {
+    document.getElementById("modalCancel").addEventListener("click", () => {
       document.body.removeChild(modalOverlay);
       resolve(null);
     });
   });
 }
 
-generatePdfBtn.addEventListener('click', async () => {
+generatePdfBtn.addEventListener("click", async () => {
   const selectedKey = donorSelect.value;
   const year = annualYear.value;
-
-  if(!selectedKey) {
-    alert('Veuillez sélectionner un donateur.');
-    return;
-  }
-
-  generatePdfBtn.disabled = true;
-  pdfOutput.style.display = 'block';
-  pdfOutput.innerHTML = `<div style="padding:8px;">Récupération des adresses e-mail du donateur...</div>`;
-
+  if(!selectedKey) { alert("Veuillez sélectionner un donateur."); return; }
+  generatePdfBtn.disabled = true; pdfOutput.style.display = "block"; pdfOutput.innerHTML = `<div style="padding:8px;">Récupération des adresses e-mail du donateur...</div>`;
   try {
     const resEmails = await fetch(`${SCRIPT_URL}?action=get_donor_emails&donor=${encodeURIComponent(selectedKey)}&token=${encodeURIComponent(API_TOKEN)}`);
     const dataEmails = await resEmails.json();
-
-    let targetEmail = '';
-
+    let targetEmail = "";
     if (dataEmails.emails && dataEmails.emails.length > 0) {
       let sortedEmails = [...dataEmails.emails];
-      if (dataEmails.default_email) {
-        sortedEmails = [
-          dataEmails.default_email, 
-          ...sortedEmails.filter(e => e !== dataEmails.default_email)
-        ];
-      }
-
+      if (dataEmails.default_email) sortedEmails = [ dataEmails.default_email, ...sortedEmails.filter(e => e !== dataEmails.default_email) ];
       targetEmail = await askEmailChoice(sortedEmails, selectedKey, year);
-
-      if (!targetEmail) {
-        pdfOutput.style.display = 'none';
-        return;
-      }
-
+      if (!targetEmail) { pdfOutput.style.display = "none"; return; }
     } else {
       let manualEmail = prompt("Aucune adresse e-mail trouvée dans l'historique. Entrez une adresse e-mail pour l'envoi :");
-      if (!manualEmail) {
-        pdfOutput.style.display = 'none';
-        return;
-      }
+      if (!manualEmail) { pdfOutput.style.display = "none"; return; }
       targetEmail = manualEmail.trim();
     }
-
     pdfOutput.innerHTML = `<div style="padding:8px;">Génération du PDF et envoi à ${escapeHtml(targetEmail)} en cours...</div>`;
-
-    // Envoyé en POST (plutôt qu'en GET) car cette action a un effet de bord
-    // (création de fichier + envoi d'email) : ça évite qu'un simple
-    // pré-chargement de lien ou un historique de navigateur ne la redéclenche.
     const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        action: 'generate_pdf',
-        donor: selectedKey,
-        year: year,
-        email: targetEmail,
-        token: API_TOKEN
-      })
+      method: "POST",
+      body: new URLSearchParams({ action: "generate_pdf", donor: selectedKey, year: year, email: targetEmail, token: API_TOKEN })
     });
     const data = await response.json();
-
     if(data.status === "SUCCESS") {
       pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré, sauvegardé et envoyé à ${escapeHtml(targetEmail)} ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
     } else if (data.status === "QUEUED") {
-      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Hors horaires (8h-18h) : le reçu sera généré et envoyé à ${escapeHtml(targetEmail)} le ${escapeHtml(data.send_after_display || 'prochain créneau de 8h')}.</div>`;
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Hors horaires (8h-18h) : le reçu sera généré et envoyé à ${escapeHtml(targetEmail)} le ${escapeHtml(data.send_after_display || "prochain créneau de 8h")}.</div>`;
       refreshQueueCount();
     } else {
-      pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${escapeHtml(data.error || 'Impossible de générer le PDF')}</div>`;
+      pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${escapeHtml(data.error || "Impossible de générer le PDF")}</div>`;
     }
   } catch(e) {
     pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur réseau lors du traitement.</div>`;
@@ -884,101 +669,91 @@ generatePdfBtn.addEventListener('click', async () => {
   }
 });
 
+/* Toggle views */
 let showingAnnual = false;
-toggleViewBtn.addEventListener('click', () => {
+toggleViewBtn.addEventListener("click", () => {
   showingAnnual = !showingAnnual;
-  parserSection.style.display = showingAnnual ? 'none' : 'block';
-  annualSection.style.display = showingAnnual ? 'block' : 'none';
-  toggleViewLabel.textContent = showingAnnual ? 'Parser un don' : 'Récapitulatif annuel';
+  parserSection.style.display = showingAnnual ? "none" : "block";
+  annualSection.style.display = showingAnnual ? "block" : "none";
+  toggleViewLabel.textContent = showingAnnual ? "Parser un don" : "Récapitulatif annuel";
 });
 
-donorSelect.addEventListener('change', () => {
-  generatePdfBtn.disabled = true;
-  annualOutput.style.display = 'none';
-});
-annualYear.addEventListener('change', () => {
-  generatePdfBtn.disabled = true;
-  annualOutput.style.display = 'none';
-});
+/* Invalidate PDF button when selection changes */
+donorSelect.addEventListener("change", () => { generatePdfBtn.disabled = true; annualOutput.style.display = "none"; });
+annualYear.addEventListener("change", () => { generatePdfBtn.disabled = true; annualOutput.style.display = "none"; });
 
+/* enhance selects, init years, load donors */
 enhanceDselect(donorSelect);
 enhanceDselect(annualYear);
 initYearSelect();
 loadDonorsFromSheet();
 
-const queueStatusLink = document.getElementById('queueStatusLink');
-const queueStatusLinkParser = document.getElementById('queueStatusLinkParser');
-queueStatusLink.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
-if (queueStatusLinkParser) queueStatusLinkParser.href = queueStatusLink.href;
+/* Queue links - we attach client-side modal handlers that call queue_json */
+const queueStatusLink = document.getElementById("queueStatusLink");
+const queueStatusLinkParser = document.getElementById("queueStatusLinkParser");
+if (queueStatusLink) queueStatusLink.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
+if (queueStatusLinkParser) queueStatusLinkParser.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
 
-// ----------------- Affichage local de la file d'attente (modal) -----------------
+/* Fetch queue JSON for modal */
 async function fetchQueueJson() {
   const url = `${SCRIPT_URL}?action=queue_json&token=${encodeURIComponent(API_TOKEN)}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Erreur réseau');
+  if (!res.ok) throw new Error("Erreur réseau");
   return res.json();
 }
 
+/* Build and show modal with queue */
 function createQueueModal(items) {
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
 
-  const box = document.createElement('div');
-  box.className = 'modal-box';
-  box.style.maxWidth = '900px';
-  box.style.width = '100%';
+  const box = document.createElement("div");
+  box.className = "modal-box";
+  box.style.maxWidth = "900px";
+  box.style.width = "100%";
 
-  // header
-  const title = document.createElement('h3');
-  title.textContent = 'Dons en attente';
-  title.style.marginTop = '0';
+  const title = document.createElement("h3");
+  title.textContent = "Dons en attente";
+  title.style.marginTop = "0";
   box.appendChild(title);
 
-  // close
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'btn btn-ghost';
-  closeBtn.textContent = 'Fermer';
-  closeBtn.style.marginBottom = '8px';
-  closeBtn.addEventListener('click', () => document.body.removeChild(overlay));
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn-ghost";
+  closeBtn.textContent = "Fermer";
+  closeBtn.style.marginBottom = "8px";
+  closeBtn.addEventListener("click", () => document.body.removeChild(overlay));
   box.appendChild(closeBtn);
 
   if (!items || items.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'empty';
-    empty.textContent = 'Aucun élément en attente.';
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "Aucun élément en attente.";
     box.appendChild(empty);
     overlay.appendChild(box);
     return overlay;
   }
 
-  // table
-  const table = document.createElement('table');
-  table.style.width = '100%';
-  table.style.borderCollapse = 'collapse';
-  table.style.marginTop = '8px';
-
-  // head
-  const thead = document.createElement('thead');
+  const table = document.createElement("table");
+  table.style.width = "100%";
+  table.style.borderCollapse = "collapse";
+  table.style.marginTop = "8px";
+  const thead = document.createElement("thead");
   thead.innerHTML = '<tr style="background:#fafafa;font-weight:700;"><th style="padding:8px;border-bottom:1px solid #eee">Type</th><th style="padding:8px;border-bottom:1px solid #eee">Donateur / Détails</th><th style="padding:8px;border-bottom:1px solid #eee">Email</th><th style="padding:8px;border-bottom:1px solid #eee">Montant / Nb</th><th style="padding:8px;border-bottom:1px solid #eee">Prévu le</th><th style="padding:8px;border-bottom:1px solid #eee">Action</th></tr>';
   table.appendChild(thead);
-
-  const tbody = document.createElement('tbody');
+  const tbody = document.createElement("tbody");
 
   items.forEach(function(item) {
-    const tr = document.createElement('tr');
-    tr.style.borderBottom = '1px solid #eee';
-    tr.style.verticalAlign = 'middle';
+    const tr = document.createElement("tr");
+    tr.style.borderBottom = "1px solid #eee";
+    tr.style.verticalAlign = "middle";
 
-    const typeLabel = (item.type === 'recu_pdf') ? 'Reçu annuel' : 'Don';
-    const details = item.type === 'recu_pdf' ? (item.donor || '') + ' (' + (item.year || '') + ')' : ((item.fields && ((item.fields.prenom || '') + ' ' + (item.fields.nom || ''))) || '');
-    const email = item.type === 'recu_pdf' ? (item.email || '-') : ((item.fields && item.fields.email) || '-');
-    const montant = item.type === 'recu_pdf' ? '-' : ((item.fields && item.fields.montant) || '-');
+    const typeLabel = (item.type === "recu_pdf") ? "Reçu annuel" : "Don";
+    const details = item.type === "recu_pdf" ? (item.donor || "") + " (" + (item.year || "") + ")" : ((item.fields && ((item.fields.prenom || "") + " " + (item.fields.nom || ""))) || "");
+    const email = item.type === "recu_pdf" ? (item.email || "-") : ((item.fields && item.fields.email) || "-");
+    const montant = item.type === "recu_pdf" ? "-" : ((item.fields && item.fields.montant) || "-");
     const when = (function() {
-      try {
-        return new Date(item.sendAfter).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
-      } catch (e) {
-        return item.sendAfter || '-';
-      }
+      try { return new Date(item.sendAfter).toLocaleString("fr-FR", { timeZone: "Europe/Paris", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" }); }
+      catch (e) { return item.sendAfter || "-"; }
     })();
 
     tr.innerHTML = `
@@ -990,24 +765,23 @@ function createQueueModal(items) {
       <td style="padding:8px;text-align:right"></td>
     `;
 
-    const actionCell = tr.querySelector('td:last-child');
-    const forceBtn = document.createElement('button');
-    forceBtn.className = 'btn';
-    forceBtn.textContent = 'Envoyer maintenant';
-    forceBtn.addEventListener('click', function() {
-      if (!confirm('Envoyer maintenant cet élément ?')) return;
+    const actionCell = tr.querySelector("td:last-child");
+    const forceBtn = document.createElement("button");
+    forceBtn.className = "btn";
+    forceBtn.textContent = "Envoyer maintenant";
+    forceBtn.addEventListener("click", function() {
+      if (!confirm("Envoyer maintenant cet élément ?")) return;
       forceSend(item.id, tr, forceBtn);
     });
     actionCell.appendChild(forceBtn);
 
-    // show lastError if present
     if (item.lastError) {
-      const errDiv = document.createElement('div');
-      errDiv.style.color = '#a00';
-      errDiv.style.marginTop = '6px';
-      errDiv.style.fontSize = '12px';
-      errDiv.textContent = 'Erreur précédente : ' + item.lastError;
-      const secondCell = tr.querySelector('td:nth-child(2)');
+      const errDiv = document.createElement("div");
+      errDiv.style.color = "#a00";
+      errDiv.style.marginTop = "6px";
+      errDiv.style.fontSize = "12px";
+      errDiv.textContent = "Erreur précédente : " + item.lastError;
+      const secondCell = tr.querySelector("td:nth-child(2)");
       secondCell.appendChild(errDiv);
     }
 
@@ -1021,24 +795,22 @@ function createQueueModal(items) {
 }
 
 async function showQueueModal() {
-  // affiche modal de chargement
-  const loadingOverlay = document.createElement('div');
-  loadingOverlay.className = 'modal-overlay';
-  const loadingBox = document.createElement('div');
-  loadingBox.className = 'modal-box';
-  loadingBox.innerHTML = '<div style="padding:12px;font-weight:700">Chargement de la file d\\'attente...</div>';
+  const loadingOverlay = document.createElement("div");
+  loadingOverlay.className = "modal-overlay";
+  const loadingBox = document.createElement("div");
+  loadingBox.className = "modal-box";
+  loadingBox.innerHTML = `<div style="padding:12px;font-weight:700">Chargement de la file d'attente...</div>`;
   loadingOverlay.appendChild(loadingBox);
   document.body.appendChild(loadingOverlay);
 
   try {
     const items = await fetchQueueJson();
     document.body.removeChild(loadingOverlay);
-
     const modal = createQueueModal(items);
     document.body.appendChild(modal);
   } catch (e) {
     document.body.removeChild(loadingOverlay);
-    alert('Erreur lors de la récupération de la file : ' + (e.message || e));
+    alert("Erreur lors de la récupération de la file : " + (e.message || e));
   }
 }
 
@@ -1046,55 +818,46 @@ async function forceSend(id, rowElement, btn) {
   try {
     btn.disabled = true;
     const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({ action: 'force_send', id: id, token: API_TOKEN })
+      method: "POST",
+      body: new URLSearchParams({ action: "force_send", id: id, token: API_TOKEN })
     });
     const data = await res.json();
     if (data.error) {
-      alert('Erreur : ' + data.error);
+      alert("Erreur : " + data.error);
       btn.disabled = false;
       return;
     }
-    // suppression visuelle de la ligne
-    if (rowElement && rowElement.parentNode) {
-      rowElement.parentNode.removeChild(rowElement);
-    }
-    // mettre à jour le compteur global affiché (si présent)
+    if (rowElement && rowElement.parentNode) rowElement.parentNode.removeChild(rowElement);
     refreshQueueCount();
   } catch (e) {
-    alert('Erreur réseau lors de l\\'envoi.');
+    alert("Erreur réseau lors de l'envoi.");
     btn.disabled = false;
   }
 }
 
-// Attache le listener aux liens existants (ne pas ouvrir un nouvel onglet)
+/* Attach modal handlers to links (prevent navigation) */
 if (queueStatusLink) {
-  queueStatusLink.removeAttribute('target');
-  queueStatusLink.addEventListener('click', function(e){ e.preventDefault(); showQueueModal(); });
+  queueStatusLink.removeAttribute("target");
+  queueStatusLink.addEventListener("click", function(e){ e.preventDefault(); showQueueModal(); });
 }
 if (queueStatusLinkParser) {
-  queueStatusLinkParser.removeAttribute('target');
-  queueStatusLinkParser.addEventListener('click', function(e){ e.preventDefault(); showQueueModal(); });
+  queueStatusLinkParser.removeAttribute("target");
+  queueStatusLinkParser.addEventListener("click", function(e){ e.preventDefault(); showQueueModal(); });
 }
-// ----------------- fin modal file d'attente -----------------
 
-// Met à jour le nombre affiché entre parenthèses à côté du lien "Voir les dons en attente".
-// Met à jour les deux liens si présents.
+/* Queue counter */
 async function refreshQueueCount() {
   try {
     const res = await fetch(`${SCRIPT_URL}?action=queue_count&token=${encodeURIComponent(API_TOKEN)}`);
     const data = await res.json();
     const n = data.count || 0;
-    const txt = `Voir les dons en attente (hors 8h-18h)${n > 0 ? ' (' + n + ')' : ''}`;
+    const txt = `Voir les dons en attente (hors 8h-18h)${n > 0 ? " (" + n + ")" : ""}`;
     if (queueStatusLink) queueStatusLink.textContent = txt;
     if (queueStatusLinkParser) queueStatusLinkParser.textContent = txt;
-    // href déjà défini plus haut, mais on s'assure qu'il soit identique
     const href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
     if (queueStatusLink) queueStatusLink.href = href;
     if (queueStatusLinkParser) queueStatusLinkParser.href = href;
-  } catch (e) {
-    // Silencieux : ce n'est qu'un compteur indicatif, pas une donnée critique.
-  }
+  } catch (e) { /* silent */ }
 }
 refreshQueueCount();
 </script>
