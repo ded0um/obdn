@@ -238,15 +238,28 @@
         </div>
         <div id="annualOutput" style="margin-top:12px; display:none;"></div>
         <div id="pdfOutput" style="margin-top:8px; display:none; font-weight:700;"></div>
-
-        <div style="margin-top:14px; text-align:center;">
-          <a id="queueStatusLink" href="#" target="_blank" rel="noopener" style="font-size:12px; color:#666; text-decoration:underline;">Voir les dons en attente (hors 8h-18h)</a>
-        </div>
       </div>
       <!-- fin vue 2 -->
 
     </div>
   </div>
+
+  <!-- Iframe cachée pour intercepter la réponse de Google Forms sans ouvrir d'onglet -->
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(isSubmitted){ showSuccess(); }"></iframe>
+
+  <!-- Formulaire invisible pour soumettre via l'iframe -->
+  <form id="gform" action="https://docs.google.com/forms/d/e/1FAIpQLSfv6vyYEftHlRniaCqX-9_0ARUQmnRGhS_LD9smjoG9Jt4yHw/formResponse" method="POST" target="hidden_iframe" style="display:none;">
+    <input type="hidden" name="entry.804774151" id="f_prenom">
+    <input type="hidden" name="entry.1947114094" id="f_nom">
+    <input type="hidden" name="entry.81735574" id="f_email">
+    <input type="hidden" name="entry.1914487624" id="f_adresse">
+    <input type="hidden" name="entry.1544391775" id="f_cp">
+    <input type="hidden" name="entry.1912325143" id="f_ville">
+    <input type="hidden" name="entry.1171780890" id="f_pays">
+    <input type="hidden" name="entry.1174142672" id="f_montant">
+    <input type="hidden" name="entry.163110140" id="f_date">
+    <input type="hidden" name="entry.879040345" id="f_mode" value="Carte bancaire">
+  </form>
 
 <script>
 /* Configuration */
@@ -307,6 +320,8 @@ let yaplaWindow = null;
 openYaplaBtn.addEventListener('click', () => {
   yaplaWindow = window.open(YAPLA_URL, '_blank');
 });
+
+let isSubmitted = false;
 
 function showMsg(txt){ validationMsg.style.display='block'; validationMsg.textContent = txt; }
 function clearMsg(){ validationMsg.style.display='none'; validationMsg.textContent = ''; }
@@ -633,7 +648,7 @@ prefillBtn.addEventListener('click', () => {
   window.open(url, '_blank');
 });
 
-submitBtn.addEventListener('click', async () => {
+submitBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant de soumettre.'); return; }
   clearMsg();
 
@@ -642,60 +657,32 @@ submitBtn.addEventListener('click', async () => {
   prefillBtn.disabled = true;
   rawEl.disabled = true;
 
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: new URLSearchParams({
-        action: 'submit_don',
-        token: API_TOKEN,
-        prenom: lastParsed.prenom || '',
-        nom: lastParsed.nom || '',
-        email: lastParsed.email || '',
-        adresse: lastParsed.adresse || '',
-        code_postal: lastParsed.code_postal || '',
-        ville: lastParsed.ville || '',
-        pays: lastParsed.pays || '',
-        montant: lastParsed.montant || '',
-        date_creation: lastParsed.date_iso || '',
-        mode_paiement: 'Carte bancaire'
-      })
-    });
-    const data = await response.json();
+  document.getElementById('f_prenom').value = lastParsed.prenom || '';
+  document.getElementById('f_nom').value = lastParsed.nom || '';
+  document.getElementById('f_email').value = lastParsed.email || '';
+  document.getElementById('f_adresse').value = lastParsed.adresse || '';
+  document.getElementById('f_cp').value = lastParsed.code_postal || '';
+  document.getElementById('f_ville').value = lastParsed.ville || '';
+  document.getElementById('f_pays').value = lastParsed.pays || '';
+  document.getElementById('f_montant').value = lastParsed.montant || '';
+  document.getElementById('f_date').value = lastParsed.date_iso || '';
+  document.getElementById('f_mode').value = 'Carte bancaire';
 
-    if (data.error) {
-      showMsg(data.error);
-      submitBtn.disabled = false;
-      parseBtn.disabled = false;
-      prefillBtn.disabled = false;
-      rawEl.disabled = false;
-      return;
-    }
-
-    showSuccess(data);
-  } catch (e) {
-    showMsg('Erreur réseau lors de la soumission. Réessaie.');
-    submitBtn.disabled = false;
-    parseBtn.disabled = false;
-    prefillBtn.disabled = false;
-    rawEl.disabled = false;
-  }
+  isSubmitted = true;
+  document.getElementById('gform').submit();
 });
 
-// data.status vaut "SENT" (envoyé tout de suite, entre 8h et 18h) ou "QUEUED"
-// (mis en attente côté script, hors de cette tranche horaire).
-function showSuccess(data) {
-  const text = successBox.querySelector('.text');
-  text.textContent = (data && data.status === 'QUEUED')
-    ? `Hors horaires (8h-18h) : ce don sera transmis automatiquement le ${data.send_after_display || 'prochain créneau de 8h'}. As-tu un autre don à parser ?`
-    : 'Don transmis. As-tu un autre don à parser ?';
-  successBox.style.display = 'flex';
-  successBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  if (data && data.status === 'QUEUED') refreshQueueCount();
+function showSuccess() {
+  if(isSubmitted) {
+    successBox.style.display = 'flex';
+    successBox.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
 }
 
 anotherBtn.addEventListener('click', () => {
   rawEl.value = '';
   lastParsed = null;
+  isSubmitted = false;
   previewBox.style.display = 'none';
   previewActions.style.display = 'none';
   donFields.innerHTML = '';
@@ -877,9 +864,6 @@ generatePdfBtn.addEventListener('click', async () => {
 
     if(data.status === "SUCCESS") {
       pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Reçu généré, sauvegardé et envoyé à ${escapeHtml(targetEmail)} ! <a href="${data.url}" target="_blank" style="font-weight:bold; color:var(--black);">Télécharger le PDF</a></div>`;
-    } else if (data.status === "QUEUED") {
-      pdfOutput.innerHTML = `<div style="padding:8px; border:1px solid var(--black); background:var(--input-bg);">Hors horaires (8h-18h) : le reçu sera généré et envoyé à ${escapeHtml(targetEmail)} le ${escapeHtml(data.send_after_display || 'prochain créneau de 8h')}.</div>`;
-      refreshQueueCount();
     } else {
       pdfOutput.innerHTML = `<div style="padding:8px; border:1px dashed var(--black);">Erreur : ${escapeHtml(data.error || 'Impossible de générer le PDF')}</div>`;
     }
@@ -915,22 +899,6 @@ enhanceDselect(donorSelect);
 enhanceDselect(annualYear);
 initYearSelect();
 loadDonorsFromSheet();
-
-const queueStatusLink = document.getElementById('queueStatusLink');
-queueStatusLink.href = `${SCRIPT_URL}?action=queue_status&token=${encodeURIComponent(API_TOKEN)}`;
-
-// Met à jour le nombre affiché entre parenthèses à côté du lien "Voir les dons en attente".
-async function refreshQueueCount() {
-  try {
-    const res = await fetch(`${SCRIPT_URL}?action=queue_count&token=${encodeURIComponent(API_TOKEN)}`);
-    const data = await res.json();
-    const n = data.count || 0;
-    queueStatusLink.textContent = `Voir les dons en attente (hors 8h-18h)${n > 0 ? ' (' + n + ')' : ''}`;
-  } catch (e) {
-    // Silencieux : ce n'est qu'un compteur indicatif, pas une donnée critique.
-  }
-}
-refreshQueueCount();
 </script>
 </body>
 </html>
