@@ -1,0 +1,20 @@
+{
+  "id": "https://ded0um.github.io/obdn/",
+  "name": "Parseur Yapla",
+  "short_name": "Parseur Yapla",
+  "description": "Parseur et envoyeur vers Google Forms",
+  "start_url": "./?app=obdn",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e6e6e6",
+  "theme_color": "#d9d9d9",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
