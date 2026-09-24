@@ -7,7 +7,7 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#e6e6e6",
-  "theme_color": "#3bbbbf",
+  "theme_color": "#e6e6e6",
   "orientation": "any",
   "icons": [
     {
