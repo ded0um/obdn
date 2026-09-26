@@ -1,8 +1,8 @@
 {
   "id": "https://ded0um.github.io/obdn/",
-  "name": "Parseur Yapla",
-  "short_name": "Parseur Yapla",
-  "description": "Parseur et envoyeur vers Google Forms",
+  "name": "Parseur (by Dedoum)",
+  "short_name": "Parseur",
+  "description": "Parseur et envoyeur",
   "start_url": "./?app=obdn",
   "scope": "./",
   "display": "standalone",
