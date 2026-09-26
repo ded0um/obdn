@@ -2,8 +2,8 @@
   <defs>
     <!-- Dégradé pour la bordure fine en Noir OBDN -->
     <linearGradient id="orange-border" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#d9d9d9"/>
-      <stop offset="100%" stop-color="#d9d9d9"/>
+      <stop offset="0%" stop-color="#f09a27"/>
+      <stop offset="100%" stop-color="#f09a27"/>
     </linearGradient>
 
     <!-- Dégradé pour le fond intérieur clair (#d9d9d9 / #e6e6e6) -->
@@ -23,6 +23,18 @@
     </filter>
   </defs>
 
+  <!-- Fond plein derrière le cercle : même couleur que le fond intérieur.
+       Il couvre tout le carré pour qu'aucun lanceur ne puisse jamais afficher
+       de blanc, quel que soit le masque appliqué (cercle, carré arrondi, etc.). -->
+  <rect width="512" height="512" fill="#ffffff"/>
+
+
+
+
+
+<!-- Groupe réduit à 78% et centré : zone sûre "maskable" de Chrome
+       (le masque du lanceur peut rogner jusqu'à 10% de chaque côté) -->
+  <g transform="translate(256, 256) scale(0.78) translate(-256, -256)">
   <!-- Anneau extérieur Orange OBDN (Bordure fine) -->
   <circle cx="256" cy="256" r="248" fill="url(#orange-border)"/>
 
