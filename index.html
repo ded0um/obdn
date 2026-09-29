@@ -323,8 +323,33 @@ const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
 // cette page - un onglet ouvert autrement ne peut pas être fermé par script).
 let yaplaWindow = null;
 
+// Ouvre une URL dans le vrai Chrome quand l'outil tourne en PWA sur Android.
+// Dans une PWA installée (WebAPK), window.open / target=_blank ouvre l'URL
+// dans un onglet intégré à l'appli. Une URL "intent://" force au contraire
+// Android à lancer Chrome lui-même. Si Chrome n'est pas disponible,
+// browser_fallback_url ouvre l'URL normalement.
+// Retourne true si on est passé par l'intent (dans ce cas, pas de référence
+// de fenêtre, donc l'onglet ne pourra pas être refermé par script).
+function openInChrome(url){
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if(isAndroid){
+    const u = new URL(url);
+    const intentUrl = 'intent://' + u.host + u.pathname + u.search + u.hash +
+      '#Intent;scheme=' + u.protocol.replace(':','') +
+      ';package=com.android.chrome' +
+      ';S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+    window.location.href = intentUrl;
+    return true;
+  }
+  return false;
+}
+
 openYaplaBtn.addEventListener('click', () => {
-  yaplaWindow = window.open(YAPLA_URL, '_blank');
+  if(openInChrome(YAPLA_URL)){
+    yaplaWindow = null;
+  } else {
+    yaplaWindow = window.open(YAPLA_URL, '_blank');
+  }
 });
 
 let isSubmitted = false;
@@ -651,7 +676,9 @@ prefillBtn.addEventListener('click', () => {
   if(!lastParsed){ showMsg('Parser d\'abord avant d\'ouvrir le lien prérempli.'); return; }
   clearMsg();
   const url = buildPrefillURL(lastParsed);
-  window.open(url, '_blank');
+  if(!openInChrome(url)){
+    window.open(url, '_blank');
+  }
 });
 
 submitBtn.addEventListener('click', () => {
