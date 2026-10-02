@@ -323,25 +323,30 @@ const YAPLA_URL = 'https://s2.yapla.com/donation/fr/campaign/list';
 // cette page - un onglet ouvert autrement ne peut pas être fermé par script).
 let yaplaWindow = null;
 
-// Ouvre une URL dans le vrai Chrome quand l'outil tourne en PWA sur Android.
-// Dans une PWA installée (WebAPK), window.open / target=_blank ouvre l'URL
-// dans un onglet intégré à l'appli. Une URL "intent://" force au contraire
-// Android à lancer Chrome lui-même. Si Chrome n'est pas disponible,
-// browser_fallback_url ouvre l'URL normalement.
+// Ouvre une URL dans le navigateur par défaut (tâche séparée) quand l'outil
+// tourne sur mobile (PWA ou navigateur). Sans package imposé dans l'intent,
+// Android laisse le choix au navigateur par défaut. En navigateur de bureau,
+// window.open suffit et ouvre un nouvel onglet.
 // Retourne true si on est passé par l'intent (dans ce cas, pas de référence
 // de fenêtre, donc l'onglet ne pourra pas être refermé par script).
 function openInChrome(url){
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  if(isAndroid){
-    const u = new URL(url);
-    const intentUrl = 'intent://' + u.host + u.pathname + u.search + u.hash +
-      '#Intent;scheme=' + u.protocol.replace(':','') +
-      ';package=com.android.chrome' +
-      ';S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
-    window.location.href = intentUrl;
-    return true;
-  }
-  return false;
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  if(!isMobile) return false;
+
+  const u = new URL(url);
+  const intentUrl = 'intent://' + u.host + u.pathname + u.search + u.hash +
+    '#Intent;scheme=' + u.protocol.replace(':','') +
+    ';S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+
+  // Un vrai lien <a> cliqué par script est plus fiable qu'un changement
+  // de location pour déclencher l'intent depuis une PWA.
+  const a = document.createElement('a');
+  a.href = intentUrl;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => a.remove(), 1000);
+  return true;
 }
 
 openYaplaBtn.addEventListener('click', () => {
