@@ -1,4 +1,4 @@
-const CACHE_NAME = 'obdn-dedoum-v3';
+const CACHE_NAME = 'obdn-dedoum-v4';
 const ASSETS = [
   '/obdn/',
   '/obdn/index.html',
@@ -21,7 +21,42 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) return;
-  if (event.request.url.includes('script.google.com') || event.request.url.includes('docs.google.com')) return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  const req = event.request;
+  if (req.method !== 'GET' || !req.url.startsWith('http')) return;
+  if (req.url.includes('script.google.com') || req.url.includes('docs.google.com')) return;
+
+  const url = new URL(req.url);
+
+  // Pages : réseau d'abord (toujours la dernière version), cache en secours hors ligne
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req, { ignoreSearch: true })
+            .then((cached) => cached || caches.match('/obdn/index.html'))
+        )
+    );
+    return;
+  }
+
+  // Autres ressources : cache d'abord, puis réseau (mise en cache si même origine)
+  event.respondWith(
+    caches.match(req, { ignoreSearch: true }).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        if (res.ok && url.origin === self.location.origin) {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        }
+        return res;
+      });
+    })
+  );
 });
