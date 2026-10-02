@@ -1,4 +1,4 @@
-const CACHE_NAME = 'obdn-dedoum-v4';
+const CACHE_NAME = 'obdn-dedoum-v5';
 const ASSETS = [
   '/obdn/',
   '/obdn/index.html',
