@@ -1,9 +1,9 @@
 const CACHE_NAME = 'obdn-dedoum-v3';
-const APP_SHELL = [
-  './',
-  './index.html',
-  './manifest.json',
-  './icon.svg'
+const ASSETS = [
+  '/obdn/',
+  '/obdn/index.html',
+  '/obdn/manifest.json',
+  '/obdn/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
